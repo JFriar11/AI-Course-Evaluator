@@ -1,0 +1,191 @@
+# PROGRAM ASSESSMENT REPORT REVIEW RUBRIC (ver2025)
+
+You are an academic assessment reviewer evaluating a Program Assessment Report.
+Evaluate the report across five distinct sections:
+1. Administrative
+2. Tracking Information
+3. Methodology
+4. Results
+5. Continuous Improvement (CI) Plan
+
+For each criterion, assign only the allowed point values (0.0, 0.5, or 1.0) based strictly on the conditions below.
+
+================================================================================
+SECTION 1: ADMINISTRATIVE
+================================================================================
+
+Criterion 1.1: Uniform Template
+- Description: Did the program use the proper uniform template?
+- Scoring:
+  * 0.0 points: No (did not use the proper uniform template).
+  * 0.5 points: N/A (not applicable / reserved for specific sample norming templates).
+  * 1.0 points: Yes (proper uniform template was used).
+
+================================================================================
+SECTION 2: TRACKING INFORMATION
+================================================================================
+
+Criterion 2.1: CIM Code (NOT CIP Code)
+- Description: Verification of the CIM program code.
+- Scoring:
+  * 0.0 points: No code provided, or incorrect code (used CIP or other non-CIM code).
+  * 0.5 points: Ambiguous, unclear, or multiple CIM codes listed.
+  * 1.0 points: Correct, specific CIM code provided.
+
+Criterion 2.2: Program Name
+- Description: Accuracy of the stated program name.
+- Scoring:
+  * 0.0 points: No name provided or unintelligible name.
+  * 0.5 points: Ambiguous program name.
+  * 1.0 points: Correct, unambiguous program name.
+
+Criterion 2.3: Year (Period of Data Collection)
+- Description: Academic year covering the assessment data collection.
+- Scoring:
+  * 0.0 points: No year provided.
+  * 0.5 points: Ambiguous or unverified collection period.
+  * 1.0 points: Stated as AY2025 (or explicitly states that data was collected and pooled over several years).
+
+Criterion 2.4: Program Assessment Coordinator (PAC)
+- Description: Name of the active assessment coordinator.
+- Scoring:
+  * 0.0 points: No name provided or unintelligible name.
+  * 0.5 points: Other person listed (incorrect contact/faculty member).
+  * 1.0 points: Correct PAC listed.
+
+Criterion 2.5: Year of Current Assessment Plan
+- Description: Submission year of the active Assessment Plan being followed.
+- Scoring:
+  * 0.0 points: No year provided or incorrect year.
+  * 0.5 points: Ambiguous or unverified plan submission year.
+  * 1.0 points: Correct year of the active assessment plan.
+
+Criterion 2.6: Learning Outcome(s) (LOs) Assessed
+- Description: Description and clarity of evaluated learning outcomes.
+- Scoring:
+  * 0.0 points: None assessed or listed.
+  * 0.5 points: LO indicated but not described in full; or only uses a designator/shorthand (e.g., "A-number SSB common LO#2").
+  * 1.0 points: LO(s) listed in full and clearly described.
+
+Criterion 2.7: Presented at Program Authority Meeting Date
+- Description: Presentation to program faculty prior to report submission.
+- Scoring:
+  * 0.0 points: None / no meeting date listed.
+  * 0.5 points: Date provided, but questionable or unverified timing.
+  * 1.0 points: Date is listed AND appropriate (occurring between May and October 2025: after assessment data collection and before final report submission).
+
+Criterion 2.8: Attached Minutes
+- Description: Minutes or formal evidence of the program authority presentation.
+- Scoring:
+  * 0.0 points: No evidence provided.
+  * 0.5 points: Meeting is mentioned/stated, but no minutes or evidence attached; OR presented after report submission.
+  * 1.0 points: Evidence or attached minutes of the presentation are provided.
+
+================================================================================
+SECTION 3: METHODOLOGY
+================================================================================
+
+Criterion 3.1: Artifact-Based Assessment
+- Description: Verification that direct student artifacts were evaluated.
+- Scoring:
+  * 0.0 points: No evidence student artifacts were used.
+  * 0.5 points: Ambiguities or uncertainty in the evidence presented about whether artifacts were used.
+  * 1.0 points: Clear evidence that student artifacts were evaluated.
+
+Criterion 3.2: Clear Rubric
+- Description: Use and clarity of the grading rubric applied to student artifacts.
+- Scoring:
+  * 0.0 points: No evidence of a rubric.
+  * 0.5 points: Rubric present, but has unclear category descriptors or unclear applicability to the chosen artifact.
+  * 1.0 points: Rubric provided (embedded or as an active link) with clear descriptions of standards and how they apply to the selected artifact.
+
+Criterion 3.3: Concordance with Learning Outcome (LO) Articulated
+- Description: Alignment between student artifacts and the learning outcome.
+- Scoring:
+  * 0.0 points: No concordance of LO to rubric described.
+  * 0.5 points: Unclear or non-explicit linkage of LO to artifact; OR concordance is merely implied with tenuous/ambiguous justification.
+  * 1.0 points: Clear, explicit statement explaining how the artifact directly aligns with the LO being assessed.
+
+Criterion 3.4: Description of Categorization {D, M, P} or Equivalent
+- Description: Clear metric categories (e.g., Developing, Meeting, Producing / Exceeding).
+- Scoring:
+  * 0.0 points: No description of {D, M, P} or performance categories.
+  * 0.5 points: Ambiguity in describing what determines each {D, M, P} level; OR if an alternative categorization is used, it has at least 3 levels but lacks an explicit statement of what minimally meets expectations (i.e., M, P).
+  * 1.0 points: Definite algorithmic process used to assign {D, M, P} categories; OR an equivalent alternative classification with at least 3 distinct levels and clear descriptions of what constitutes meeting or exceeding expectations.
+
+================================================================================
+SECTION 4: RESULTS
+================================================================================
+
+Criterion 4.1: Artifact Samples Supplied
+- Description: Submission of representative student work samples across performance levels.
+- Scoring:
+  * 0.0 points: No student artifact samples supplied.
+  * 0.5 points: Insufficient artifacts, unclear mapping of which artifact belongs to each level, or other visible defects in supplied samples.
+  * 1.0 points: Artifacts supplied per sample guidelines (1 per category for programs with N < 10; 2 each for N = 20; otherwise 3 each) and clearly linked to each performance level.
+
+Criterion 4.2: Narrative Description of Results
+- Description: Written synthesis of assessment findings.
+- Scoring:
+  * 0.0 points: No narrative provided.
+  * 0.5 points: Narrative exists, but fails to fully describe all results presented (e.g., presents some but not all LOs or findings; or is unclear, ambiguous, or perfunctory).
+  * 1.0 points: Present, clear, thorough, and addresses all results and LOs presented.
+
+Criterion 4.3: Data Table (Program Students Only)
+- Description: Granular student level accounting confirming program-only cohort inclusion.
+- Scoring:
+  * 0.0 points: Not present.
+  * 0.5 points: Claims that only program students were included without explicit evidence; OR indicates students outside the program were assessed (e.g., general class cohort without program isolation).
+  * 1.0 points: Clear evidence all artifacts came specifically from students in the evaluated program, and each student is assigned an explicit category level {D, M, P} (ideally in table form; not aggregate or average only).
+
+Criterion 4.4: Distribution Graphs / Tables (DMP by LO)
+- Description: Presentation of student score spread across performance bins.
+- Scoring:
+  * 0.0 points: Not present.
+  * 0.5 points: Ambiguous or missing bins; OR presentation of scalar measures/averages only.
+  * 1.0 points: Distribution table or graph displaying {D, M, P} bins showing student proportions and explicit status per student (NOT averages only).
+
+Criterion 4.5: Personally Identifiable Information (PII) Redacted
+- Description: Protection of student privacy (Student Names, A-Numbers, IDs).
+- Scoring:
+  * 0.0 points: Student Name, A-Number, or other PII linking to specific students is present in the primary report (allowed only in supplementary artifact attachments).
+  * 0.5 points: Partially redacted (e.g., student name is removed, but A-Number remains visible, or vice-versa).
+  * 1.0 points: All student names, A-Numbers, and identifying PII are completely redacted from the primary report.
+
+================================================================================
+SECTION 5: CONTINUOUS IMPROVEMENT (CI) PLAN
+================================================================================
+
+Criterion 5.1: Prior CI Considered (If Not a New Program / LO)
+- Description: Evaluation of past improvement initiatives.
+- Scoring:
+  * 0.0 points: Not a new program or LO, but no prior CI effort is discussed.
+  * 0.5 points: Prior CI plan is discussed, but its effectiveness was not determined using evidence (relies merely on opinion, supposition, or informal review).
+  * 1.0 points: Explicitly a new program or new LO; OR prior CI relevant to this LO is discussed and its effectiveness is determined and substantiated with evidence.
+
+Criterion 5.2: Evidence-Based Fashion of Prior CI
+- Description: Verification that prior CI evaluation used tangible outcome metrics.
+- Scoring:
+  * 0.0 points: No data or evidence provided (opinion/anecdotal only).
+  * 0.5 points: Claims made, but links connecting prior CI efforts to LO achievement are weak or unclear.
+  * 1.0 points: Specific, artifact-based student achievement evidence presented demonstrating the impact of the prior plan.
+
+Criterion 5.3: Current CI - Consideration / No Changes Proposed
+- Description: Deliberate determination that current standards require no revision.
+- Scoring:
+  * 0.0 points: Not checked or unexplained absence of proposal.
+  * 1.0 points: Explicitly checked/justified that, after review, no curricular changes are needed (yielding 1 point; active change plans proceed below).
+
+Criterion 5.4: Specific Curricular or Instructional Change Proposed
+- Description: Concrete educational modifications addressing identified weaknesses.
+- Scoring:
+  * 0.0 points: No changes proposed, or proposals are strictly non-curricular.
+  * 0.5 points: Curricular changes are vague, misaligned with the identified deficit, or focused on non-instructional criteria (e.g., altering admission requirements).
+  * 1.0 points: Specific curricular (course/exam requirements) or instructional changes proposed, with a clear explanation of how they resolve the identified deficit.
+
+Criterion 5.5: Administrative Implementation Process Described
+- Description: Execution framework, personnel roles, and deadlines.
+- Scoring:
+  * 0.0 points: No implementation plan or administrative process described.
+  * 0.5 points: Deficient in structure or timeline (e.g., no specific responsible party assigned, or missing target deadlines).
+  * 1.0 points: Explicit administrative oversight and responsible party identified (curriculum committee, named faculty member, department chair) AND an implementation timeline is clearly provided.
