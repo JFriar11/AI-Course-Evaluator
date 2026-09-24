@@ -1,0 +1,7 @@
+pypdf>=4.3,<7
+pypdfium2>=4.30,<6
+pytesseract>=0.3.13,<0.4
+Pillow>=10,<13
+ollama>=0.5,<1
+pydantic>=2,<3
+watchdog>=4,<7
