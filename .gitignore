@@ -3,3 +3,5 @@ Evaluate/
 inbox/
 Output/
 results/
+__pycache__/
+.venv/
