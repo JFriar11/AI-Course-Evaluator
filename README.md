@@ -2,6 +2,53 @@
 
 ## Overview
 
+### PDF conversion setup
+
+Run from the project directory with Python 3.10 or newer:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+On Windows, activate with `.venv\Scripts\activate` instead. Scanned PDFs also
+require the Tesseract executable on your PATH (English language data included).
+On macOS with Homebrew, install it with `brew install tesseract`; on Ubuntu/Debian,
+use `sudo apt install tesseract-ocr`. Windows installation guidance is available
+in the [Tesseract documentation](https://tesseract-ocr.github.io/tessdoc/Installation.html).
+
+Convert a PDF without running the model:
+
+```sh
+python pdf_extraction.py "path/to/report.pdf"
+```
+
+Or run `python watcher.py`, then drop a PDF into `Evaluate/`. The watcher converts
+it before sending text to Ollama. Conversion runs locally and writes
+`Output/<name>_extracted.txt` with page markers and `<name>_extraction.json` with
+per-page text, extraction methods, errors, and readiness status.
+
+Digital pages use [pypdf layout extraction](https://pypdf.readthedocs.io/en/stable/user/extract-text.html)
+to retain spacing and approximate table columns. Pages with images or fewer than
+40 alphanumeric characters use local OCR. This conservative rule also OCRs pages
+with decorative images. Blank pages, failed OCR, and unreadable pages require
+review and block grading; inspect the original and supply a corrected PDF before
+retrying. OCR and layout extraction do not guarantee correct reading order,
+table structure, handwriting, or interpretation of charts. The extracted text
+should be checked for important evidence.
+
+The current evaluator accepts at most 25,000 extracted characters. Longer PDFs
+are fully converted and saved but not graded, avoiding the previous silent
+truncation. Chunked evaluation is still future work. The watcher currently
+processes newly created files only; add files after starting it.
+
+Run the extraction and grading-gate regression checks:
+
+```sh
+python -m unittest discover -s tests -v
+```
+
 This project explores the development of an **AI-assisted evaluation system** designed to review institutional reports against a predefined set of requirements or evaluation criteria.
 
 Currently, these reports require significant manual review from faculty and staff. In previous evaluation cycles, reviewers from multiple departments have had to manually read, assess, and score large numbers of reports. This project aims to determine whether AI can assist with that process by providing **consistent, structured, and explainable evaluations** while reducing the amount of manual work required.
