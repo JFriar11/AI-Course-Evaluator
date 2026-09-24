@@ -1,0 +1,10 @@
+{
+  "description": "Effortlessly upload files for AI review and receive edited versions via email, streamlining your workflow and enhancing productivity.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
