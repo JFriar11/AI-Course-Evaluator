@@ -9,6 +9,8 @@ Evaluate the report across five distinct sections:
 5. Continuous Improvement (CI) Plan
 
 For each criterion, assign only the allowed point values (0.0, 0.5, or 1.0) based strictly on the conditions below.
+For each section, show the combined score of all criterion within the section. 
+Provide a summarized socre for each section (such as SECTION 1), as well as listing your score for each criterion (such as Criterion 2.2).
 
 ================================================================================
 SECTION 1: ADMINISTRATIVE
