@@ -1,4 +1,4 @@
-##TO DO/UPDATES
+## TO DO/UPDATES
 
 * Split rubric into different files for different sections
 
