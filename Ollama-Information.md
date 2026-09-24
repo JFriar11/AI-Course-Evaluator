@@ -15,21 +15,21 @@ ollama --version
 ```
 If a version number is displayed, the installation was successful. If the command is not recognized, restart the terminal or Windows and try again.
 ## Download and Run a Model
-Download a model, such as `llama3.2`:
+Download a model, such as `deepseek-r1:8b`:
 ```powershell
-ollama pull llama3.2
+ollama pull deepseek-r1:8b
 ```
 Start an interactive chat:
 ```powershell
-ollama run llama3.2
+ollama run deepseek-r1:8b
 ```
 Enter a prompt, then press `Ctrl+C` to exit.
 ## Useful Commands
 ```powershell
 ollama list                  # List downloaded models
 ollama ps                    # List running models
-ollama stop llama3.2         # Stop a running model
-ollama rm llama3.2           # Remove a downloaded model
+ollama stop deepseek-r1:8b         # Stop a running model
+ollama rm deepseek-r1:8b           # Remove a downloaded model
 ollama serve                 # Start the Ollama service manually
 ```
 ## Local API
@@ -44,4 +44,3 @@ Invoke-RestMethod http://localhost:11434/api/tags
 - Check available disk space before downloading large models.
 - Use `ollama list` to confirm that a model downloaded successfully.
 
-Download Ollama and models only from official sources, and review each model's license before using it.
