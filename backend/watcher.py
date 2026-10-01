@@ -154,12 +154,7 @@ def grade_document(file_path: Path):
     number in each rationale alongside its supporting evidence quotes.
     """
     
-<<<<<<< Updated upstream
-    print(f"[AI] Using rubric from: {ACTIVE_RUBRIC_PATH.name}")
     print("[AI] Requesting deepseek-r1:8b with thinking enabled; progress every 15s.", flush=True)
-=======
-    print(f"[AI] Model is thinking through the evaluation...")
->>>>>>> Stashed changes
     
     try:
         final_json, reasoning_trace = stream_evaluation(
