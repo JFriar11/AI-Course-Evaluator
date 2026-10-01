@@ -38,6 +38,12 @@ retrying. OCR and layout extraction do not guarantee correct reading order,
 table structure, handwriting, or interpretation of charts. The extracted text
 should be checked for important evidence.
 
+Rotated embedded text is included in layout extraction. pypdf may still warn
+that rotated text degrades the layout; this warning alone does not block grading.
+Check the saved extracted text against the PDF, especially for sideways labels
+and tables. Extraction failures print the affected page numbers and errors in
+the watcher console as well as saving them in the extraction JSON report.
+
 The current evaluator accepts at most 25,000 extracted characters. Longer PDFs
 are fully converted and saved but not graded, avoiding the previous silent
 truncation. Chunked evaluation is still future work. The watcher currently

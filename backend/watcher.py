@@ -1,4 +1,5 @@
 import time
+from threading import Event, Thread
 from pathlib import Path
 from pdf_extraction import extract_pdf, save_extraction
 from ollama import chat
@@ -51,6 +52,49 @@ def load_rubric(rubric_path: Path) -> str:
         raise ValueError(f"Rubric file '{rubric_path.name}' is empty.")
     return text
 
+def stream_evaluation(**kwargs):
+    """Collect a streamed response while reporting progress without printing its text."""
+    stopped = Event()
+    started = time.monotonic()
+    state = {"phase": "Waiting for Ollama", "characters": 0}
+
+    def report_progress():
+        while not stopped.wait(15):
+            elapsed = int(time.monotonic() - started)
+            print(f"[AI] {state['phase']} | {elapsed}s elapsed | "
+                  f"{state['characters']} response characters received", flush=True)
+
+    reporter = Thread(target=report_progress, daemon=True)
+    reporter.start()
+    reasoning, content = [], []
+    completed = False
+    stream = None
+    try:
+        stream = chat(stream=True, **kwargs)
+        for chunk in stream:
+            thinking = chunk.message.thinking or ""
+            answer = chunk.message.content or ""
+            reasoning.append(thinking)
+            content.append(answer)
+            state['characters'] += len(thinking) + len(answer)
+            if answer:
+                state['phase'] = "Receiving scorecard"
+            elif thinking:
+                state['phase'] = "Receiving model thinking"
+            if chunk.done:
+                if chunk.done_reason == "length":
+                    raise RuntimeError("Model reached its generation limit; scorecard was not saved.")
+                completed = True
+        if not completed or not ''.join(content).strip():
+            raise RuntimeError("Ollama returned an incomplete or empty response; scorecard was not saved.")
+        return ''.join(content), ''.join(reasoning) or "No thinking trace returned."
+    finally:
+        stopped.set()
+        reporter.join()
+        if stream is not None and hasattr(stream, 'close'):
+            stream.close()
+
+
 def grade_document(file_path: Path):
     print(f"\n[AI] Reading new file: {file_path.name}")
     
@@ -66,7 +110,11 @@ def grade_document(file_path: Path):
         extraction = extract_pdf(file_path)
         text_path = save_extraction(extraction, OUTPUT_DIR, file_path.stem)
         if not extraction.ready:
-            print(f"[ERROR] Extraction needs review; see {file_path.stem}_extraction.json")
+            report_path = OUTPUT_DIR / f"{file_path.stem}_extraction.json"
+            print(f"[ERROR] Extraction needs review; grading stopped. Report: {report_path.resolve()}")
+            for page in extraction.pages:
+                if page.error:
+                    print(f"[ERROR] Page {page.page}: {page.error}")
             return
         text = text_path.read_text(encoding="utf-8")
         if len(text) > 25000:
@@ -90,10 +138,10 @@ def grade_document(file_path: Path):
     """
     
     print(f"[AI] Using rubric from: {ACTIVE_RUBRIC_PATH.name}")
-    print(f"[AI] Model is thinking through the evaluation...")
+    print("[AI] Requesting deepseek-r1:8b with thinking enabled; progress every 15s.", flush=True)
     
     try:
-        response = chat(
+        final_json, reasoning_trace = stream_evaluation(
             model="deepseek-r1:8b", 
             messages=[{"role": "user", "content": prompt}],
             format=Scorecard.model_json_schema(), 
@@ -103,9 +151,6 @@ def grade_document(file_path: Path):
                 "num_ctx": 8192 
             }
         )
-        
-        reasoning_trace = response.message.thinking or "No thinking trace returned."
-        final_json = response.message.content
         
         # Save output files
         json_file = OUTPUT_DIR / f"{file_path.stem}_scorecard.json"

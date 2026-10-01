@@ -73,7 +73,11 @@ def extract_pdf(path: Path) -> Extraction:
         for number, page in enumerate(reader.pages, start=1):
             text = ""
             try:
-                text = clean_text(page.extract_text(extraction_mode="layout") or "")
+                # Keep rotated labels and passages; layout may be imperfect, but
+                # the default would omit this evidence from otherwise readable pages.
+                text = clean_text(page.extract_text(
+                    extraction_mode="layout", layout_mode_strip_rotated=False
+                ) or "")
                 # Images can contain scanned text even when a header is selectable.
                 needs_ocr = sum(c.isalnum() for c in text) < 40 or bool(page.images)
             except Exception:
