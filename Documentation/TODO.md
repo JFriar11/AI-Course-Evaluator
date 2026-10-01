@@ -5,9 +5,6 @@
   
 * Integrate agent with UI
 
-  
-* Format JSON Output Template
-
 
 * Design Web UI
 

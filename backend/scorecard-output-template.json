@@ -1,0 +1,97 @@
+{
+  "administrative": {
+    "criteria": {
+      "1.1": {
+        "score": "Your Answer"
+      }
+    },
+    "section_score": "Your Answer"
+  },
+  "tracking_information": {
+    "criteria": {
+      "2.1": {
+        "score": "Your Answer"
+      },
+      "2.2": {
+        "score": "Your Answer"
+      },
+      "2.3": {
+        "score": "Your Answer"
+      },
+      "2.4": {
+        "score": "Your Answer"
+      },
+      "2.5": {
+        "score": "Your Answer"
+      },
+      "2.6": {
+        "score": "Your Answer"
+      },
+      "2.7": {
+        "score": "Your Answer"
+      },
+      "2.8": {
+        "score": "Your Answer"
+      }
+    },
+    "section_score": "Your Answer"
+  },
+  "methodology": {
+    "criteria": {
+      "3.1": {
+        "score": "Your Answer"
+      },
+      "3.2": {
+        "score": "Your Answer"
+      },
+      "3.3": {
+        "score": "Your Answer"
+      },
+      "3.4": {
+        "score": "Your Answer"
+      }
+    },
+    "section_score": "Your Answer"
+  },
+  "results": {
+    "criteria": {
+      "4.1": {
+        "score": "Your Answer"
+      },
+      "4.2": {
+        "score": "Your Answer"
+      },
+      "4.3": {
+        "score": "Your Answer"
+      },
+      "4.4": {
+        "score": "Your Answer"
+      },
+      "4.5": {
+        "score": "Your Answer"
+      }
+    },
+    "section_score": "Your Answer"
+  },
+  "continuous_improvement": {
+    "criteria": {
+      "5.1": {
+        "score": "Your Answer"
+      },
+      "5.2": {
+        "score": "Your Answer"
+      },
+      "5.3": {
+        "score": "Your Answer"
+      },
+      "5.4": {
+        "score": "Your Answer"
+      },
+      "5.5": {
+        "score": "Your Answer"
+      }
+    },
+    "section_score": "Your Answer"
+  },
+  "total_calculated_score": "Your Answer"
+}
