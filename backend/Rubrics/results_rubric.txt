@@ -1,0 +1,39 @@
+================================================================================
+SECTION 4: RESULTS
+================================================================================
+
+Criterion 4.1: Artifact Samples Supplied
+- Description: Submission of representative student work samples across performance levels.
+- Scoring:
+  * 0.0 points: No student artifact samples supplied.
+  * 0.5 points: Insufficient artifacts, unclear mapping of which artifact belongs to each level, or other visible defects in supplied samples.
+  * 1.0 points: Artifacts supplied per sample guidelines (1 per category for programs with N < 10; 2 each for N = 20; otherwise 3 each) and clearly linked to each performance level.
+
+Criterion 4.2: Narrative Description of Results
+- Description: Written synthesis of assessment findings.
+- Scoring:
+  * 0.0 points: No narrative provided.
+  * 0.5 points: Narrative exists, but fails to fully describe all results presented (e.g., presents some but not all LOs or findings; or is unclear, ambiguous, or perfunctory).
+  * 1.0 points: Present, clear, thorough, and addresses all results and LOs presented.
+
+Criterion 4.3: Data Table (Program Students Only)
+- Description: Granular student level accounting confirming program-only cohort inclusion.
+- Scoring:
+  * 0.0 points: Not present.
+  * 0.5 points: Claims that only program students were included without explicit evidence; OR indicates students outside the program were assessed (e.g., general class cohort without program isolation).
+  * 1.0 points: Clear evidence all artifacts came specifically from students in the evaluated program, and each student is assigned an explicit category level {D, M, P} (ideally in table form; not aggregate or average only).
+
+Criterion 4.4: Distribution Graphs / Tables (DMP by LO)
+- Description: Presentation of student score spread across performance bins.
+- Scoring:
+  * 0.0 points: Not present.
+  * 0.5 points: Ambiguous or missing bins; OR presentation of scalar measures/averages only.
+  * 1.0 points: Distribution table or graph displaying {D, M, P} bins showing student proportions and explicit status per student (NOT averages only).
+
+Criterion 4.5: Personally Identifiable Information (PII) Redacted
+- Description: Protection of student privacy (Student Names, A-Numbers, IDs).
+- Scoring:
+  * 0.0 points: Student Name, A-Number, or other PII linking to specific students is present in the primary report (allowed only in supplementary artifact attachments).
+  * 0.5 points: Partially redacted (e.g., student name is removed, but A-Number remains visible, or vice-versa).
+  * 1.0 points: All student names, A-Numbers, and identifying PII are completely redacted from the primary report.
+  

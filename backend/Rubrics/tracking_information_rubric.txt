@@ -1,0 +1,60 @@
+================================================================================
+SECTION 2: TRACKING INFORMATION
+================================================================================
+
+Criterion 2.1: CIM Code (NOT CIP Code)
+- Description: Verification of the CIM program code.
+- Scoring:
+  * 0.0 points: No code provided, or incorrect code (used CIP or other non-CIM code).
+  * 0.5 points: Ambiguous, unclear, or multiple CIM codes listed.
+  * 1.0 points: Correct, specific CIM code provided.
+
+Criterion 2.2: Program Name
+- Description: Accuracy of the stated program name.
+- Scoring:
+  * 0.0 points: No name provided or unintelligible name.
+  * 0.5 points: Ambiguous program name.
+  * 1.0 points: Correct, unambiguous program name.
+
+Criterion 2.3: Year (Period of Data Collection)
+- Description: Academic year covering the assessment data collection.
+- Scoring:
+  * 0.0 points: No year provided.
+  * 0.5 points: Ambiguous or unverified collection period.
+  * 1.0 points: Stated as AY2025 (or explicitly states that data was collected and pooled over several years).
+
+Criterion 2.4: Program Assessment Coordinator (PAC)
+- Description: Name of the active assessment coordinator.
+- Scoring:
+  * 0.0 points: No name provided or unintelligible name.
+  * 0.5 points: Other person listed (incorrect contact/faculty member).
+  * 1.0 points: Correct PAC listed.
+
+Criterion 2.5: Year of Current Assessment Plan
+- Description: Submission year of the active Assessment Plan being followed.
+- Scoring:
+  * 0.0 points: No year provided or incorrect year.
+  * 0.5 points: Ambiguous or unverified plan submission year.
+  * 1.0 points: Correct year of the active assessment plan.
+
+Criterion 2.6: Learning Outcome(s) (LOs) Assessed
+- Description: Description and clarity of evaluated learning outcomes.
+- Scoring:
+  * 0.0 points: None assessed or listed.
+  * 0.5 points: LO indicated but not described in full; or only uses a designator/shorthand (e.g., "A-number SSB common LO#2").
+  * 1.0 points: LO(s) listed in full and clearly described.
+
+Criterion 2.7: Presented at Program Authority Meeting Date
+- Description: Presentation to program faculty prior to report submission.
+- Scoring:
+  * 0.0 points: None / no meeting date listed.
+  * 0.5 points: Date provided, but questionable or unverified timing.
+  * 1.0 points: Date is listed AND appropriate (occurring between May and October 2025: after assessment data collection and before final report submission).
+
+Criterion 2.8: Attached Minutes
+- Description: Minutes or formal evidence of the program authority presentation.
+- Scoring:
+  * 0.0 points: No evidence provided.
+  * 0.5 points: Meeting is mentioned/stated, but no minutes or evidence attached; OR presented after report submission.
+  * 1.0 points: Evidence or attached minutes of the presentation are provided.
+  

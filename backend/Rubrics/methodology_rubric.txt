@@ -1,0 +1,31 @@
+================================================================================
+SECTION 3: METHODOLOGY
+================================================================================
+
+Criterion 3.1: Artifact-Based Assessment
+- Description: Verification that direct student artifacts were evaluated.
+- Scoring:
+  * 0.0 points: No evidence student artifacts were used.
+  * 0.5 points: Ambiguities or uncertainty in the evidence presented about whether artifacts were used.
+  * 1.0 points: Clear evidence that student artifacts were evaluated.
+
+Criterion 3.2: Clear Rubric
+- Description: Use and clarity of the grading rubric applied to student artifacts.
+- Scoring:
+  * 0.0 points: No evidence of a rubric.
+  * 0.5 points: Rubric present, but has unclear category descriptors or unclear applicability to the chosen artifact.
+  * 1.0 points: Rubric provided (embedded or as an active link) with clear descriptions of standards and how they apply to the selected artifact.
+
+Criterion 3.3: Concordance with Learning Outcome (LO) Articulated
+- Description: Alignment between student artifacts and the learning outcome.
+- Scoring:
+  * 0.0 points: No concordance of LO to rubric described.
+  * 0.5 points: Unclear or non-explicit linkage of LO to artifact; OR concordance is merely implied with tenuous/ambiguous justification.
+  * 1.0 points: Clear, explicit statement explaining how the artifact directly aligns with the LO being assessed.
+
+Criterion 3.4: Description of Categorization {D, M, P} or Equivalent
+- Description: Clear metric categories (e.g., Developing, Meeting, Producing / Exceeding).
+- Scoring:
+  * 0.0 points: No description of {D, M, P} or performance categories.
+  * 0.5 points: Ambiguity in describing what determines each {D, M, P} level; OR if an alternative categorization is used, it has at least 3 levels but lacks an explicit statement of what minimally meets expectations (i.e., M, P).
+  * 1.0 points: Definite algorithmic process used to assign {D, M, P} categories; OR an equivalent alternative classification with at least 3 distinct levels and clear descriptions of what constitutes meeting or exceeding expectations.

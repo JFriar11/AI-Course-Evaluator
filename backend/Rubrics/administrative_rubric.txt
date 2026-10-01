@@ -1,0 +1,11 @@
+================================================================================
+SECTION 1: ADMINISTRATIVE
+================================================================================
+
+Criterion 1.1: Uniform Template
+- Description: Did the program use the proper uniform template?
+- Scoring:
+  * 0.0 points: No (did not use the proper uniform template).
+  * 0.5 points: N/A (not applicable / reserved for specific sample norming templates).
+  * 1.0 points: Yes (proper uniform template was used).
+  

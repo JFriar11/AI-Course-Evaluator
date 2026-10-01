@@ -1,6 +1,7 @@
 import time
 from threading import Event, Thread
 from pathlib import Path
+from typing import List, Dict
 from pdf_extraction import extract_pdf, save_extraction
 from ollama import chat
 from pydantic import BaseModel, Field
@@ -19,7 +20,14 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 RUBRICS_DIR.mkdir(exist_ok=True)
 
 # Path to the primary rubric file
-ACTIVE_RUBRIC_PATH = RUBRICS_DIR / "active_rubric.txt"
+ACTIVE_RUBRIC_PATHS = [
+    RUBRICS_DIR / "active_rubric.txt",
+    RUBRICS_DIR / "administrative_rubric.txt",
+    RUBRICS_DIR / "tracking_information_rubric.txt",
+    RUBRICS_DIR / "methodology_rubric.txt",
+    RUBRICS_DIR / "results_rubric.txt",
+    RUBRICS_DIR / "ci_plan_rubric.txt"
+    ]
 
 # -------------------------------------------------------------
 # 1. JSON Schema Definition
@@ -40,17 +48,26 @@ class Scorecard(BaseModel):
 # -------------------------------------------------------------
 # 2. Evaluation Logic
 # -------------------------------------------------------------
-def load_rubric(rubric_path: Path) -> str:
-    """Loads the rubric text from disk."""
-    if not rubric_path.exists():
-        raise FileNotFoundError(
-            f"Rubric file not found at: {rubric_path.resolve()}\n"
-            f"Please create '{rubric_path.name}' inside the '{RUBRICS_DIR}' folder."
-        )
-    text = rubric_path.read_text(encoding="utf-8").strip()
-    if not text:
-        raise ValueError(f"Rubric file '{rubric_path.name}' is empty.")
-    return text
+def load_rubrics(rubric_paths: List[Path]) -> Dict[str, str]:
+    """Loads multiple rubric texts from disk given a list of Path objects."""
+
+    rubrics = {}
+
+    for rubric_path in rubric_paths:
+        if not rubric_path.exists():
+            raise FileNotFoundError(
+                f"Rubric file not found at: {rubric_path.resolve()}\n"
+                f"Please create '{rubric_path.name}' inside the '{RUBRICS_DIR}' folder."
+            )
+
+        text = rubric_path.read_text(encoding="utf-8").strip()
+
+        if not text:
+            raise ValueError(f"Rubric file '{rubric_path.name}' is empty.")
+
+        rubrics[rubric_path.name] = text
+
+    return rubrics
 
 def stream_evaluation(**kwargs):
     """Collect a streamed response while reporting progress without printing its text."""
@@ -100,7 +117,7 @@ def grade_document(file_path: Path):
     
     # Check that rubric is available before doing work
     try:
-        rubric_text = load_rubric(ACTIVE_RUBRIC_PATH)
+        rubric_text = load_rubrics(ACTIVE_RUBRIC_PATHS)
     except Exception as e:
         print(f"[ERROR] Rubric check failed: {e}")
         return
@@ -137,8 +154,12 @@ def grade_document(file_path: Path):
     number in each rationale alongside its supporting evidence quotes.
     """
     
+<<<<<<< Updated upstream
     print(f"[AI] Using rubric from: {ACTIVE_RUBRIC_PATH.name}")
     print("[AI] Requesting deepseek-r1:8b with thinking enabled; progress every 15s.", flush=True)
+=======
+    print(f"[AI] Model is thinking through the evaluation...")
+>>>>>>> Stashed changes
     
     try:
         final_json, reasoning_trace = stream_evaluation(
@@ -186,7 +207,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Watcher Active:")
     print(f"   • Drop PDFs into:    ./{EVALUATE_DIR}/")
-    print(f"   • Active Rubric:     ./{ACTIVE_RUBRIC_PATH}")
     print(f"   • Output stored in:  ./{OUTPUT_DIR}/")
     print("   • Press Ctrl+C to stop.")
     print("=" * 60)

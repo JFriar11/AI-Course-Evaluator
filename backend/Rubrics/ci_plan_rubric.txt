@@ -1,0 +1,37 @@
+================================================================================
+SECTION 5: CONTINUOUS IMPROVEMENT (CI) PLAN
+================================================================================
+
+Criterion 5.1: Prior CI Considered (If Not a New Program / LO)
+- Description: Evaluation of past improvement initiatives.
+- Scoring:
+  * 0.0 points: Not a new program or LO, but no prior CI effort is discussed.
+  * 0.5 points: Prior CI plan is discussed, but its effectiveness was not determined using evidence (relies merely on opinion, supposition, or informal review).
+  * 1.0 points: Explicitly a new program or new LO; OR prior CI relevant to this LO is discussed and its effectiveness is determined and substantiated with evidence.
+
+Criterion 5.2: Evidence-Based Fashion of Prior CI
+- Description: Verification that prior CI evaluation used tangible outcome metrics.
+- Scoring:
+  * 0.0 points: No data or evidence provided (opinion/anecdotal only).
+  * 0.5 points: Claims made, but links connecting prior CI efforts to LO achievement are weak or unclear.
+  * 1.0 points: Specific, artifact-based student achievement evidence presented demonstrating the impact of the prior plan.
+
+Criterion 5.3: Current CI - Consideration / No Changes Proposed
+- Description: Deliberate determination that current standards require no revision.
+- Scoring:
+  * 0.0 points: Not checked or unexplained absence of proposal.
+  * 1.0 points: Explicitly checked/justified that, after review, no curricular changes are needed (yielding 1 point; active change plans proceed below).
+
+Criterion 5.4: Specific Curricular or Instructional Change Proposed
+- Description: Concrete educational modifications addressing identified weaknesses.
+- Scoring:
+  * 0.0 points: No changes proposed, or proposals are strictly non-curricular.
+  * 0.5 points: Curricular changes are vague, misaligned with the identified deficit, or focused on non-instructional criteria (e.g., altering admission requirements).
+  * 1.0 points: Specific curricular (course/exam requirements) or instructional changes proposed, with a clear explanation of how they resolve the identified deficit.
+
+Criterion 5.5: Administrative Implementation Process Described
+- Description: Execution framework, personnel roles, and deadlines.
+- Scoring:
+  * 0.0 points: No implementation plan or administrative process described.
+  * 0.5 points: Deficient in structure or timeline (e.g., no specific responsible party assigned, or missing target deadlines).
+  * 1.0 points: Explicit administrative oversight and responsible party identified (curriculum committee, named faculty member, department chair) AND an implementation timeline is clearly provided.
