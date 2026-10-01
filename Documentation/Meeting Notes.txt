@@ -1,0 +1,24 @@
+Here’s a cleaned-up summary of the meeting notes, focused on the project requirements, deadlines, and next steps:
+
+### Meeting Summary — AI Course/Report Evaluator
+
+The main goal is to build an **AI-powered system that evaluates submitted reports** according to an established rubric or set of requirements. The project is intended to reduce the amount of manual review currently performed by faculty/committee members.
+
+The envisioned workflow has **two stages**. First, users should be able to submit a report for a **pre-submission evaluation**, allowing the AI to identify problems and provide feedback before the report is formally submitted. Once the report reaches an acceptable level, it can proceed to a more complete/final analysis. Eventually, the system may also support summarizing results across multiple reports.
+
+For the immediate prototype, there is **no need to integrate with IIT databases or other university systems**. A simple demonstration is sufficient. The application can run **locally on a laptop**, with a basic interface where a report is uploaded, processed, and an AI-generated evaluation/report is produced. More advanced workflow features—such as emailing results or integrating with existing systems—can be discussed later.
+
+### Timeline & Deliverables
+
+* **This weekend:** The team expects to have sample AI-generated evaluations/reports ready. Send one to the professor by email so he can review it and provide feedback.
+* **October 12–13:** Target having the demonstration in a presentable state. If it is ready, the professor will add the project to the oversight committee's meeting agenda.
+* **October 15:** Major milestone. The goal is to **demonstrate the prototype during the committee's Zoom meeting**. The team can join the meeting and screen-share the locally running application.
+* **November:** The committee meets again before Thanksgiving. After the October demo, the system could potentially be tested by faculty, feedback collected, and a more developed version presented at the November meeting.
+
+### Key Priority
+
+The most important thing right now is **not building a production-ready website or full university integration**. The priority is proving the core concept:
+
+**Upload report → AI evaluates it against requirements → useful evaluation/feedback is generated.**
+
+If that workflow works reliably and can be demonstrated by **October 15**, the committee can evaluate the concept and help determine what the eventual full workflow and integration should look like.
