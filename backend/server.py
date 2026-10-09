@@ -91,3 +91,7 @@ async def evaluate_endpoint(
     finally:
         if temp_path.exists():
             temp_path.unlink()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
