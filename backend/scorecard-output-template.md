@@ -18,10 +18,7 @@ When filling in the template:
   `total_calculated_score` from the section scores.
 - Return only the JSON object, without Markdown fences or surrounding prose.
 
-This is a proposed output template, not a validation schema. Its score values
-are strings solely to keep the blank template free of example data. The current
-`Scorecard` model in `backend/watcher.py` stores one evaluation per section;
-adopting this criterion-level structure requires updating that model and any
-consumers. For consistent production output, enforce the structure and allowed
-scores with a validation schema, validate returned results, and calculate totals
-in application code.
+The watcher and API use this JSON template as their structured-output schema.
+The `"Your Answer"` placeholders are interpreted as numeric values, and the
+template's keys define the required output structure. Update this template when
+the active rubric's section or criterion IDs change.

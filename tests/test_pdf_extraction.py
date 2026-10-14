@@ -70,14 +70,14 @@ class ExtractionTests(unittest.TestCase):
         make_pdf(self.pdf, [self.text, ''])
         with patch('pdf_extraction.ocr_page', side_effect=RuntimeError('OCR missing')), \
              patch.object(watcher, 'OUTPUT_DIR', self.root), \
-             patch.object(watcher, 'load_rubric', return_value='Rubric'), \
+             patch.object(watcher, 'load_rubrics', return_value={'active_rubric.txt': 'Rubric'}), \
              patch('builtins.print') as output, \
              patch.object(watcher, 'chat') as chat:
             watcher.grade_document(self.pdf)
         chat.assert_not_called()
-        output.assert_any_call('[ERROR] Page 2: OCR missing')
-        self.assertTrue(any(str((self.root / 'report_extraction.json').resolve()) in str(call)
+        self.assertTrue(any('Extraction needs review' in str(call)
                             for call in output.call_args_list))
+        self.assertTrue((self.root / 'report_extraction.json').exists())
         self.assertIn('OCR missing', (self.root / 'report_extraction.json').read_text())
 
     def test_empty_ocr_requires_review(self):
@@ -101,7 +101,7 @@ class ExtractionTests(unittest.TestCase):
     def test_agent_receives_saved_page_marked_text(self):
         make_pdf(self.pdf, [self.text])
         with patch.object(watcher, 'OUTPUT_DIR', self.root), \
-             patch.object(watcher, 'load_rubric', return_value='Rubric'), \
+             patch.object(watcher, 'load_rubrics', return_value={'active_rubric.txt': 'Rubric'}), \
              patch.object(watcher, 'chat') as chat:
             chat.return_value = iter([
                 ChatResponse(message={'role': 'assistant', 'thinking': 'Reviewing'}),
@@ -111,15 +111,35 @@ class ExtractionTests(unittest.TestCase):
             watcher.grade_document(self.pdf)
         chat.assert_called_once()
         self.assertTrue(chat.call_args.kwargs['stream'])
+        self.assertEqual(
+            chat.call_args.kwargs['options']['num_ctx'],
+            watcher.MODEL_CONTEXT_TOKENS,
+        )
         self.assertEqual((self.root / 'report_scorecard.json').read_text(), '{}')
         self.assertIn('Reviewing', (self.root / 'report_audit_trail.txt').read_text())
         saved = (self.root / 'report_extracted.txt').read_text()
         self.assertIn(saved, chat.call_args.kwargs['messages'][0]['content'])
+        prompt = chat.call_args.kwargs['messages'][0]['content']
+        templates = watcher.load_scorecard_templates()
+        self.assertIn(templates.instructions, prompt)
+        self.assertIn(templates.json_template, prompt)
+        self.assertEqual(chat.call_args.kwargs['format'], templates.schema)
+        self.assertNotIn('evidence_quotes', prompt)
+
+    def test_scorecard_schema_comes_from_json_template(self):
+        templates = watcher.load_scorecard_templates()
+        self.assertEqual(templates.schema['type'], 'object')
+        self.assertEqual(
+            templates.schema['properties']['administrative']['properties']['criteria']
+            ['properties']['1.1'],
+            {'type': 'object', 'properties': {'score': {'type': 'number'}},
+             'required': ['score'], 'additionalProperties': False},
+        )
 
     def test_incomplete_model_stream_does_not_save_scorecard(self):
         make_pdf(self.pdf, [self.text])
         with patch.object(watcher, 'OUTPUT_DIR', self.root), \
-             patch.object(watcher, 'load_rubric', return_value='Rubric'), \
+             patch.object(watcher, 'load_rubrics', return_value={'active_rubric.txt': 'Rubric'}), \
              patch.object(watcher, 'chat', return_value=iter([
                  ChatResponse(message={'role': 'assistant', 'content': '{'})
              ])):
@@ -130,7 +150,7 @@ class ExtractionTests(unittest.TestCase):
         result = Extraction('report.pdf', [PageText(1, 'x' * 25001, 'embedded')])
         with patch.object(watcher, 'extract_pdf', return_value=result), \
              patch.object(watcher, 'OUTPUT_DIR', self.root), \
-             patch.object(watcher, 'load_rubric', return_value='Rubric'), \
+             patch.object(watcher, 'load_rubrics', return_value={'active_rubric.txt': 'Rubric'}), \
              patch.object(watcher, 'chat') as chat:
             watcher.grade_document(self.pdf)
         chat.assert_not_called()

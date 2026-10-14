@@ -46,7 +46,9 @@ the watcher console as well as saving them in the extraction JSON report.
 
 The current evaluator accepts at most 25,000 extracted characters. Longer PDFs
 are fully converted and saved but not graded, avoiding the previous silent
-truncation. Chunked evaluation is still future work. The watcher currently
+truncation. Both evaluation modes request a 16,384-token Ollama context to
+accommodate larger rubrics and reports; this uses more memory than the model's
+default context. Chunked evaluation is still future work. The watcher currently
 processes newly created files only; add files after starting it.
 
 Run the extraction and grading-gate regression checks:
