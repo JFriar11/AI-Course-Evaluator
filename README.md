@@ -2,6 +2,68 @@
 
 ## Overview
 
+### Running the web app
+
+The interface is a built React page served by the backend — no Figma, no separate
+dev server. From the project folder:
+
+```sh
+./linux_start.sh      # Linux / macOS
+.\windows_start.ps1  # Windows PowerShell
+```
+
+The launcher creates `.venv` if it is missing, installs the dependencies in
+`backend/requirements.txt`, builds `frontend/dist` if it has not been built,
+checks that Ollama is running, and opens `http://127.0.0.1:8000`. Drop a report
+PDF onto the page: the local model scores all 23 rubric criteria, the page shows
+the evidence and notes behind each score, and the totals are recomputed from the
+criterion scores. Each finished report can be downloaded as
+`<name>_scorecard.json`, `<name>_feedback.md`, `<name>_detail.json`,
+`<name>_audit_trail.txt`, or the extracted text, and can be emailed if SMTP
+details are placed in `backend/email_config.json`.
+
+Every evidence string the model produces is checked against the extracted text.
+A quote counts as grounded only if at least five consecutive words of it appear
+verbatim in the report; a scattered overlap of unrelated words is not enough.
+Quotes that turn out to be the rubric's own wording restated rather than the
+report's text are labelled "the rubric wording, not the report". Anything
+ungrounded is flagged in the interface, counted in `unverified_evidence`, and
+excluded from `verified_score` in `<name>_scorecard.json` — a second total that
+shows how much of the score is actually traceable to the document.
+
+Before the model is asked anything, a script extracts facts it can confirm
+directly (the program code, the academic year, the meeting-date line, whether
+minutes are attached, and whether any student A-Number or 7-8 digit identifier
+survives in the text). Those facts are given to the model as ground truth and
+recorded in `script_verified_facts` in `<name>_detail.json`.
+
+Long reports are not cut in half. Their pages are ranked by relevance to the
+rubric criteria and only the top-scoring pages are sent to the model, with a
+note stating how much was left out. The `<name>_feedback.md` file ends with a
+**Requires human verification** list naming every criterion that earned points
+without a findable quote, so a reviewer knows exactly which scores to check.
+
+To actually send reports by email, copy `backend/email_config.example.json` to
+`backend/email_config.json` and fill in your SMTP details:
+
+```json
+{
+  "smtp_host": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_user": "you@example.edu",
+  "smtp_password": "your-app-password",
+  "sender": "you@example.edu",
+  "use_tls": true
+}
+```
+
+Until that file exists the email button tells you it is not configured and shows
+the feedback text instead of failing silently.
+
+The model used is chosen automatically from the models installed in Ollama
+(deepseek-r1, qwen2.5, qwq, llama3.1, mistral — first match wins). Override it
+with `EVAL_MODEL=<model> ./linux_start.sh`.
+
 ### PDF conversion setup
 
 Run from the project directory with Python 3.10 or newer:
@@ -9,7 +71,7 @@ Run from the project directory with Python 3.10 or newer:
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 On Windows, activate with `.venv\Scripts\activate` instead. Scanned PDFs also
@@ -116,6 +178,64 @@ A potential output could include:
 * Confidence or uncertainty indicators
 
 The exact evaluation format will be refined as the project develops.
+
+---
+
+## How the AI is kept honest
+
+Local models fill gaps in a document by restating the rubric back to us as if it
+were a quotation. The pipeline therefore does not trust the model's output; every
+claim is checked afterwards by the script.
+
+**Evidence is required before a score.** The output template orders the fields as
+`evidence → note → score`, and the prompt states that if no quote can be copied,
+the quote stays empty and the score is `0.0`. Generation order constrains what the
+model can commit to.
+
+**Every quote is checked against the text.** `verify_evidence()` normalises the
+document and the quoted evidence, then requires five consecutive matching words.
+A shorter quote must match in full. Scattered word overlap does not count.
+
+**Rubric restatement is detected.** If the "quote" appears verbatim in the rubric,
+it is tagged `evidence_source: "rubric"` and flagged.
+
+**Facts supplied by the script cannot be passed off as quotations.** Deterministic
+pre-checks extract verifiable facts (CIM code, academic year, meeting minutes,
+PII/A-Number presence) before the model ever reads the document. If the model
+copies one of those lines as its evidence, it is tagged `script_fact` and flagged
+as not coming from the report.
+
+**Two totals are reported.** `total_calculated_score` sums the model's criterion
+scores, recomputed by the script rather than trusted from the model.
+`verified_score` counts only criteria whose evidence could be traced to the
+document. The interface shows both, e.g. `8.5 / 23 (7.5 evidenced)`.
+
+**Reviewers are pointed at the text.** For every criterion the script could not
+verify, `review_hints()` searches the full document for the criterion's own
+wording and returns the three most likely passages, shown as
+*"Search the report for: …"*. Only unverified criteria get hints.
+
+**Long reports are selected by relevance, not truncated.** 13 of the 110 AY25
+reports exceed the 25,000-character budget (the worst is 498,000). Cutting off the
+tail silently discards data and teaches the model to invent it. Instead pages are
+scored against the rubric headings, irrelevant pages are dropped, and the model is
+told which pages were omitted and instructed to score anything it cannot ground
+as `0.0`.
+
+**Unverified criteria get one more chance, with the receipts shown.** A score is
+not abandoned just because the model's quote was bad. `recheck_criteria()` runs a
+second, narrower pass: for each criterion that kept points but lost its quote, the
+model is shown the exact passages the script found for that criterion's wording and
+asked to either quote one of them or set the score to `0.0`. It is explicitly told
+not to invent wording, and the revised answer is run through `verify_evidence()`
+again. Recheck is capped (`RECHECK_MAX_CRITERIA`, `RECHECK_TIMEOUT_SECONDS`) so a
+report never costs two full grading runs; `detail.json` records
+`recheck: {attempted, changed, flagged}` and the UI reports it.
+
+Measured on `thum.pdf`: the earlier pipeline reported `23 / 23` with 10 quotes
+that could not be found anywhere in the document. The current pipeline reports
+`8.5 / 23`, with 1 unverified quote and a hint pointing the reviewer at the
+passage behind each doubtful score. Same model, same PDF.
 
 ---
 

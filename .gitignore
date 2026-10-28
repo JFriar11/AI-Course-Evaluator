@@ -5,3 +5,8 @@ Output/
 results/
 __pycache__/
 .venv/
+
+# Node build artefacts. frontend/dist is deliberately committed so the app
+# runs without installing Node - only node_modules is excluded.
+frontend/node_modules/
+.DS_Store

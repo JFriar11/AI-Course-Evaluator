@@ -1,5 +1,6 @@
 node_modules/
-dist/
+# dist/ is committed on purpose: it lets a non-technical user run the app
+# without installing Node. Do not ignore it.
 build/
 .cache/
 .env*

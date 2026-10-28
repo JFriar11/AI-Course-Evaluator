@@ -1,0 +1,52 @@
+{
+  "administrative": {
+    "criteria": {
+      "1.1": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" }
+    },
+    "section_score": "Your Answer"
+  },
+  "tracking_information": {
+    "criteria": {
+      "2.1": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.2": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.3": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.4": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.5": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.6": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.7": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "2.8": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" }
+    },
+    "section_score": "Your Answer"
+  },
+  "methodology": {
+    "criteria": {
+      "3.1": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "3.2": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "3.3": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "3.4": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" }
+    },
+    "section_score": "Your Answer"
+  },
+  "results": {
+    "criteria": {
+      "4.1": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "4.2": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "4.3": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "4.4": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "4.5": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" }
+    },
+    "section_score": "Your Answer"
+  },
+  "continuous_improvement": {
+    "criteria": {
+      "5.1": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "5.2": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "5.3": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "5.4": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" },
+      "5.5": { "evidence": "Your Evidence", "note": "Your Note", "score": "Your Answer" }
+    },
+    "section_score": "Your Answer"
+  },
+  "summary": "Your Summary",
+  "total_calculated_score": "Your Answer"
+}

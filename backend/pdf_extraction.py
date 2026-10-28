@@ -13,6 +13,7 @@ class PageText:
     text: str
     method: str
     error: str | None = None
+    needs_manual_review: bool = False
 
 
 @dataclass
@@ -40,11 +41,20 @@ def clean_text(text: str) -> str:
 
 def ocr_page(path: Path, index: int) -> str:
     """Render locally at 300 DPI; imports stay optional for text-only PDFs."""
+    import shutil
+
+    if not shutil.which("tesseract"):
+        raise RuntimeError(
+            "Tesseract is not installed, so scanned pages cannot be read. "
+            "Install it (Debian/Ubuntu: sudo apt install tesseract-ocr; "
+            "macOS: brew install tesseract; Windows: https://tesseractocr.org) "
+            "and restart the app."
+        )
     try:
         import pypdfium2 as pdfium
         import pytesseract
     except ImportError as exc:
-        raise RuntimeError("OCR dependencies missing; run pip install -r requirements.txt") from exc
+        raise RuntimeError("OCR dependencies missing; run pip install -r backend/requirements.txt") from exc
 
     with pdfium.PdfDocument(str(path)) as document:
         page = document[index]
@@ -78,11 +88,14 @@ def extract_pdf(path: Path) -> Extraction:
                 text = clean_text(page.extract_text(
                     extraction_mode="layout", layout_mode_strip_rotated=False
                 ) or "")
-                # Images can contain scanned text even when a header is selectable.
-                needs_ocr = sum(c.isalnum() for c in text) < 40 or bool(page.images)
             except Exception:
-                needs_ocr = True
-            if not needs_ocr:
+                text = ""
+
+            alnum = sum(c.isalnum() for c in text)
+            # Only OCR when the page is genuinely thin on selectable text.
+            # An embedded logo or figure is not a reason to re-render a page that
+            # already reads well.
+            if alnum >= 40:
                 pages.append(PageText(number, text, "embedded"))
                 continue
             try:
@@ -91,7 +104,13 @@ def extract_pdf(path: Path) -> Extraction:
                     raise ValueError("Little or no readable text; inspect this page (it may be blank).")
                 pages.append(PageText(number, recognized, "ocr"))
             except Exception as exc:
-                pages.append(PageText(number, text, "failed", str(exc)))
+                # A scanned page with no text is a real problem. A page with some
+                # selectable text plus an unavailable OCR engine is a warning, not
+                # a hard stop: grading can still proceed on what is legible.
+                if alnum >= 40:
+                    pages.append(PageText(number, text, "embedded", f"OCR skipped: {exc}"))
+                else:
+                    pages.append(PageText(number, text, "failed", str(exc), needs_manual_review=True))
     return Extraction(path.name, pages)
 
 
