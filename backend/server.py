@@ -10,10 +10,9 @@ immediately and the UI polls /api/jobs/<id> for progress.
 """
 import json
 import shutil
-import smtplib
-from email.message import EmailMessage
 import threading
 import time
+import traceback
 import uuid
 import webbrowser
 from dataclasses import dataclass, asdict
@@ -26,7 +25,6 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from config import (
-    EMAIL_CONFIG_PATH,
     FRONTEND_DIST,
     HOST,
     MAX_DOC_CHARS,
@@ -40,6 +38,8 @@ from config import (
     model_is_available,
     ollama_is_running,
 )
+from console import safe_print as print
+from notifications import send_completion_email, valid_recipient
 from watcher import (EvaluationError, grade_pdf, load_criterion_texts, load_scorecard_templates,
                      compare_runs)
 
@@ -78,7 +78,10 @@ class Job:
     model: Optional[str] = None
     cancelled: bool = False
     result: Optional[dict] = None
+    error_traceback: Optional[str] = None
     error: Optional[str] = None
+    delivery_email: Optional[str] = None
+    notification: Optional[dict] = None
 
 
 def _set_job(job_id: str, **patch) -> None:
@@ -110,11 +113,18 @@ def _run_grading(job_id: str, pdf_path: Path, output_stem: str, model: Optional[
         _set_job(job_id, status="error", phase=str(exc), error=str(exc),
                  elapsed=int(time.monotonic() - started))
     except Exception as exc:  # pragma: no cover - unexpected failures
-        _set_job(job_id, status="error", phase=f"Unexpected failure: {exc}", error=f"{type(exc).__name__}: {exc}",
+        _set_job(job_id, status="error", phase=f"Unexpected failure: {exc}", error=f"{type(exc).__name__}: {exc}", error_traceback=traceback.format_exc(),
                  elapsed=int(time.monotonic() - started))
     finally:
         if pdf_path.exists():
             pdf_path.unlink()
+
+    # The result is already saved and marked complete before optional delivery.
+    job = JOBS[job_id]
+    if job.get("result") and job.get("delivery_email"):
+        _set_job(job_id, notification={"status": "sending", "message": "Sending completion email..."})
+        notification = send_completion_email(job["result"], job["filename"], job["delivery_email"])
+        _set_job(job_id, notification=notification)
 
 
 @app.get("/api/health")
@@ -191,9 +201,14 @@ def cancel_job(job_id: str):
 
 
 @app.post("/api/evaluate")
-async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(None)):
+async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(None),
+                   recipient: Optional[str] = Form(None)):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files can be evaluated.")
+
+    recipient = recipient.strip() if recipient else None
+    if recipient and not valid_recipient(recipient):
+        raise HTTPException(status_code=400, detail="Enter a valid delivery email address.")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     safe_name = Path(file.filename).name
@@ -202,7 +217,7 @@ async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(Non
         shutil.copyfileobj(file.file, buffer)
 
     job = Job(id=uuid.uuid4().hex, filename=safe_name, started_at=time.monotonic(),
-              model=model or MODEL)
+              model=model or MODEL, delivery_email=recipient)
     with JOBS_LOCK:
         JOBS[job.id] = asdict(job)
 
@@ -234,57 +249,14 @@ def download(job_id: str, kind: str):
 
 @app.post("/api/email")
 def email_results(job_id: str = Form(...), recipient: str = Form(...)):
-    """Send the feedback report by email if SMTP is configured in
-    backend/email_config.json. Without config, reports why and returns the
-    markdown so nothing is silently lost."""
+    """Manually send or retry a completion email for an existing result."""
     job = JOBS.get(job_id)
     if not job or not job.get("result"):
         raise HTTPException(status_code=404, detail="No completed result to send")
 
-    config_path = Path(EMAIL_CONFIG_PATH)
-    if not config_path.exists():
-        return {
-            "status": "not_configured",
-            "message": "Email is not configured. Create backend/email_config.json "
-                       "with smtp_host, smtp_port, smtp_user, smtp_password, sender "
-                       "and use_tls, then try again.",
-            "feedback": job["result"]["feedback"],
-        }
-
-    config = json.loads(config_path.read_text(encoding="utf-8"))
-    result = job["result"]
-
-    message = EmailMessage()
-    message["Subject"] = f"Assessment results for {job['filename']}"
-    message["From"] = config.get("sender", "")
-    message["To"] = recipient
-    message.set_content(result["feedback"])
-
-    # Attach the machine-readable scorecard so the committee can archive it.
-    scorecard_path = result["files"].get("scorecard")
-    if scorecard_path and Path(scorecard_path).exists():
-        message.add_attachment(
-            Path(scorecard_path).read_text(encoding="utf-8").encode("utf-8"),
-            maintype="application",
-            subtype="json",
-            filename=Path(scorecard_path).name,
-        )
-
-    try:
-        if config.get("use_ssl", False):
-            server = smtplib.SMTP_SSL(config["smtp_host"], config.get("smtp_port", 465), timeout=15)
-        else:
-            server = smtplib.SMTP(config["smtp_host"], config.get("smtp_port", 587), timeout=15)
-        with server:
-            if config.get("use_tls", True) and not config.get("use_ssl", False):
-                server.starttls()
-            if config.get("smtp_user"):
-                server.login(config["smtp_user"], config.get("smtp_password", ""))
-            server.send_message(message)
-    except Exception as exc:
-        return {"status": "failed", "message": f"SMTP send failed: {exc}"}
-
-    return {"status": "sent", "message": f"Feedback emailed to {recipient} with the scorecard attached"}
+    notification = send_completion_email(job["result"], job["filename"], recipient.strip())
+    _set_job(job_id, notification=notification)
+    return notification
 
 
 @app.get("/api/results")

@@ -11,6 +11,8 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import Any, Callable, Dict, List, Optional
 
+from console import safe_print as print
+
 from ollama import chat
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler

@@ -555,10 +555,10 @@ class ExtractionTests(unittest.TestCase):
         job_id = 'email-endpoint'
         server.JOBS[job_id] = {'id': job_id, 'filename': 'x.pdf', 'status': 'done',
                               'result': {'feedback': '## Criterion 1.1', 'files': {}}}
-        with patch.object(server, 'EMAIL_CONFIG_PATH', self.root / 'no-such-config.json'):
+        with patch('notifications.EMAIL_CONFIG_PATH', self.root / 'no-such-config.json'):
             response = server.email_results(job_id=job_id, recipient='committee@example.edu')
         self.assertEqual(response['status'], 'not_configured')
-        self.assertIn('Criterion 1.1', response['feedback'])
+        self.assertIn('email_config.json', response['message'])
         del server.JOBS[job_id]
 
     def test_email_endpoint_sends_when_smtp_is_configured(self):
@@ -568,7 +568,7 @@ class ExtractionTests(unittest.TestCase):
         scorecard = self.root / 'send_scorecard.json'
         scorecard.write_text('{"total_calculated_score": 12.5}')
         server.JOBS[job_id] = {'id': job_id, 'filename': 'x.pdf', 'status': 'done',
-                              'result': {'feedback': '## Criterion 1.1',
+                              'result': {'feedback': '## Criterion 1.1', 'scorecard': {},
                                          'files': {'scorecard': str(scorecard)}}}
         config = self.root / 'email_config.json'
         config.write_text(json.dumps({'smtp_host': '127.0.0.1', 'smtp_port': 1025,
@@ -584,16 +584,16 @@ class ExtractionTests(unittest.TestCase):
             def __exit__(self, *exc):
                 return False
             def send_message(self, message):
-                captured.append(str(message))
+                captured.append(message)
 
-        with patch.object(server, 'EMAIL_CONFIG_PATH', config), \
-             patch.object(server, 'smtplib') as smtplib_module:
+        with patch('notifications.EMAIL_CONFIG_PATH', config), \
+             patch('notifications.smtplib') as smtplib_module:
             smtplib_module.SMTP = FakeSMTP
             response = server.email_results(job_id=job_id, recipient='committee@example.edu')
 
         self.assertEqual(response['status'], 'sent')
-        self.assertIn('## Criterion 1.1', captured[1])
-        self.assertIn('send_scorecard.json', captured[1])
+        self.assertEqual(list(captured[1].iter_attachments())[0].get_payload(decode=True).decode(), '## Criterion 1.1')
+        self.assertEqual(list(captured[1].iter_attachments())[1].get_filename(), 'assessment_scorecard.json')
         del server.JOBS[job_id]
 
     def test_grading_aborts_when_the_model_runs_past_the_timeout(self):

@@ -21,6 +21,70 @@ criterion scores. Each finished report can be downloaded as
 `<name>_audit_trail.txt`, or the extracted text, and can be emailed if SMTP
 details are placed in `backend/email_config.json`.
 
+### Automatic completion emails
+
+Save a delivery address using **Save email** before uploading a report. Each new
+upload carries that saved address to the backend. After the evaluation output is
+saved, the backend automatically sends a completion email, even if the browser is
+closed. Existing grading, scoring, and output files are unchanged. Reports
+uploaded without a saved address continue to work without email.
+
+Copy `backend/email_config.example.json` to `backend/email_config.json` and fill
+in your mail provider's SMTP host, port, username, password (or app password), and
+sender address. Port 587 uses STARTTLS by default. For port 465, add
+`"use_ssl": true` and `"use_tls": false`. The local configuration is ignored by Git.
+
+#### University Outlook / Microsoft 365 sender
+
+The evaluator supports Microsoft Graph with delegated `Mail.Send`. Users still
+enter their own receiving address; only the system's sending account signs in.
+No university password or app secret is stored in the email configuration.
+
+One-time setup (university IT may need to complete steps 1–3):
+
+1. In [Microsoft Entra](https://entra.microsoft.com), register a single-tenant app
+   named **Program Assessment System** for your university directory. Record its
+   **Application (client) ID** and **Directory (tenant) ID**.
+2. Under **Authentication**, add the **Mobile and desktop applications** platform
+   with redirect URI `http://localhost` for browser sign-in.
+3. Under **API permissions**, add **Microsoft Graph > Delegated permissions >
+   Mail.Send**. Obtain consent according to university policy. This integration
+   does not require application permissions, a client secret, or enabling SMTP.
+4. From the project folder, install the updated dependencies:
+   `.venv/bin/python -m pip install -r backend/requirements.txt`.
+5. Run `.venv/bin/python backend/connect_outlook.py`. Enter the sending account's
+   Microsoft sign-in email, tenant ID, and client ID. Complete sign-in and MFA in
+   the browser. If consent or sign-in is blocked, ask university IT to approve the
+   registration and delegated permission. Setup does not send a test email.
+6. After successful sign-in, the script replaces `backend/email_config.json`
+   with the Outlook configuration. Restart the existing backend once to load the
+   updated code; stop the existing process first to avoid a port-8000 conflict.
+7. Save a receiving address in the app, then use a completed report's email button
+   to test. Check the sender's **Sent Items** and the recipient's inbox/spam folder.
+   New uploads use the receiving address saved before submission.
+
+On Windows, substitute `.venv\Scripts\python.exe` for `.venv/bin/python`.
+The local token cache `backend/.outlook_token_cache.json` and email configuration
+are excluded from Git. The cache contains sensitive refresh credentials and is
+stored with owner-only permissions on macOS/Linux. Tokens refresh silently while
+university policy permits; if sign-in expires or is revoked, delivery status asks
+you to rerun the connection script. Evaluations remain completed.
+Microsoft accepting a message does not guarantee inbox delivery; inspect Sent
+Items and any non-delivery notice. SMTP remains available for other providers.
+
+References: [Microsoft Graph sendMail](https://learn.microsoft.com/en-us/graph/api/user-sendmail?view=graph-rest-1.0),
+[Microsoft interactive and silent sign-in](https://learn.microsoft.com/en-us/entra/msal/python/getting-started/acquiring-tokens).
+
+The email includes the preliminary assessment status, up to five flagged criteria,
+the feedback document as a Markdown attachment, and the JSON scorecard. “Acceptable
+to proceed” requires every criterion to earn full credit with verified evidence;
+otherwise the email says “Revisions recommended.” This notification rule does not
+change evaluation scores, and all findings remain subject to human review.
+
+Email delivery status appears beside the completed job. Missing SMTP configuration
+or delivery failures do not fail the evaluation. Use the existing email button to
+retry manually; there are no automatic retries.
+
 The model used is chosen automatically from the models installed in Ollama
 (deepseek-r1, qwen2.5, qwq, llama3.1, mistral — first match wins). Override it
 with `EVAL_MODEL=<model> ./linux_start.sh`.

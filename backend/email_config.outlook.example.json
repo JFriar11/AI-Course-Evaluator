@@ -1,0 +1,6 @@
+{
+  "provider": "microsoft_graph",
+  "sender": "your-name@university.edu",
+  "tenant_id": "YOUR_DIRECTORY_TENANT_ID",
+  "client_id": "YOUR_APPLICATION_CLIENT_ID"
+}

@@ -10,3 +10,9 @@ __pycache__/
 # runs without installing Node - only node_modules is excluded.
 frontend/node_modules/
 .DS_Store
+
+# Local mail credentials
+backend/email_config.json
+backend/.outlook_token_cache.json
+backend/.outlook-cache-*
+backend/.email-config-*

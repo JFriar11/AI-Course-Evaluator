@@ -81,6 +81,7 @@ export interface Job {
   cancelled?: boolean
   result?: JobResult
   error?: string
+  notification?: { status: string; message: string }
   reasoning_length?: number
 }
 
@@ -140,9 +141,11 @@ export const compareRuns = (a: string, b: string) =>
 export async function uploadPdf(
   file: File,
   model?: string,
+  recipient?: string,
 ): Promise<{ job_id: string; filename: string; model: string }> {
   const form = new FormData()
   form.append('file', file)
+  if (recipient) form.append('recipient', recipient)
   if (model) form.append('model', model)
   return request('/api/evaluate', { method: 'POST', body: form })
 }

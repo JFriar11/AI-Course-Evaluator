@@ -113,7 +113,7 @@ export default function App() {
         continue
       }
       try {
-        await uploadPdf(file, model)
+        await uploadPdf(file, model, localStorage.getItem('delivery-email') || undefined)
         setUploads(prev => [...prev, { name: file.name, ok: true, message: `Queued for grading with ${model}.` }])
       } catch (error) {
         setUploads(prev => [...prev, { name: file.name, ok: false, message: String(error) }])
@@ -129,9 +129,12 @@ export default function App() {
 
   const saveEmail = () => {
     const value = email.trim()
-    if (!value) return
+    if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value)) {
+      setEmailNote('Enter a valid delivery email address.')
+      return
+    }
     localStorage.setItem('delivery-email', value)
-    setEmailNote(`Saved. Results can be emailed to ${value}.`)
+    setEmailNote(`Saved. New evaluations will automatically email ${value} when complete.`)
   }
 
   const sendEmail = async (jobId: string) => {
@@ -351,6 +354,9 @@ export default function App() {
                           </div>
                         )}
 
+                        {job.notification && (
+                          <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{job.notification.message}</p>
+                        )}
                         {job.status === 'error' && (
                           <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{job.error ?? job.phase}</p>
                         )}
