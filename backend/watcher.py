@@ -824,7 +824,7 @@ def recheck_criteria(
     model: str,
     missed: Optional[List[Dict[str, Any]]] = None,
     should_stop: Optional[Callable[[], bool]] = None,
-    progress: Optional[Callable[[str, int, int]]] = None,
+    progress: Optional[Callable[[str, int, int], None]] = None,
 ) -> Dict[str, int]:
     """Second, evidence-constrained pass over the criteria the script cannot confirm.
 
@@ -989,7 +989,7 @@ def build_feedback(
 PROGRESS_INTERVAL = 15
 
 
-def stream_evaluation(progress: Optional[Callable[[str, int, int]]] = None,
+def stream_evaluation(progress: Optional[Callable[[str, int, int], None]] = None,
                       progress_interval: int = PROGRESS_INTERVAL,
                       should_stop: Optional[Callable[[], bool]] = None, **kwargs):
     """Collect a streamed response while reporting progress without printing its text."""
@@ -1044,7 +1044,7 @@ def stream_evaluation(progress: Optional[Callable[[str, int, int]]] = None,
             stream.close()
 
 
-def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int]]] = None,
+def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None]] = None,
               output_stem: Optional[str] = None,
               should_stop: Optional[Callable[[], bool]] = None,
               model: Optional[str] = None) -> Dict[str, object]:
