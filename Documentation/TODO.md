@@ -1,13 +1,19 @@
 # TO DO/UPDATES
 
-* Split rubric into different files for different sections
+Joel:
+-Mess around with UI
+-Make Output downloadable
+-Experiment with different models
 
-  
-* Integrate agent with UI
+Carson:
+-Work on the AI prompts
+-Formatting the output to be more readable
+  -.txt file with reasoning
 
+Luis + Jack N:
+-Work on testing
+  -Why are scores different?
+-Red vs Blue stuff
 
-* Design Web UI
-
-
-* Check Accuracy
-  ## Weekly Update
+Jack F:
+-Set up email functionality
