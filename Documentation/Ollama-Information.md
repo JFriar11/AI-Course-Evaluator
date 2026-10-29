@@ -14,6 +14,14 @@ Open PowerShell and run:
 ollama --version
 ```
 If a version number is displayed, the installation was successful. If the command is not recognized, restart the terminal or Windows and try again.
+## Start with the Windows Launcher
+Run `windows_start.ps1` from PowerShell. The launcher starts the Ollama service if needed, then opens a separate Ollama console running `deepseek-r1:8b`. If the model is not installed yet, Ollama downloads it on the first run. The evaluator is configured to use this model for that launch.
+
+If PowerShell blocks the script, allow it for the current PowerShell window and run the launcher:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\windows_start.ps1
+```
 ## Download and Run a Model
 Download a model, such as `deepseek-r1:8b`:
 ```powershell
@@ -43,4 +51,3 @@ Invoke-RestMethod http://localhost:11434/api/tags
 - Confirm that Windows Defender Firewall permits Ollama when prompted.
 - Check available disk space before downloading large models.
 - Use `ollama list` to confirm that a model downloaded successfully.
-
