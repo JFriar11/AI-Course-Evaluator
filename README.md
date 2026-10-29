@@ -4,8 +4,7 @@
 
 ### Running the web app
 
-The interface is a built React page served by the backend — no Figma, no separate
-dev server. From the project folder:
+The interface is a built React page served by the backend AI harness
 
 ```sh
 ./linux_start.sh      # Linux / macOS
@@ -22,48 +21,9 @@ criterion scores. Each finished report can be downloaded as
 `<name>_audit_trail.txt`, or the extracted text, and can be emailed if SMTP
 details are placed in `backend/email_config.json`.
 
-Every evidence string the model produces is checked against the extracted text.
-A quote counts as grounded only if at least five consecutive words of it appear
-verbatim in the report; a scattered overlap of unrelated words is not enough.
-Quotes that turn out to be the rubric's own wording restated rather than the
-report's text are labelled "the rubric wording, not the report". Anything
-ungrounded is flagged in the interface, counted in `unverified_evidence`, and
-excluded from `verified_score` in `<name>_scorecard.json` — a second total that
-shows how much of the score is actually traceable to the document.
-
-Before the model is asked anything, a script extracts facts it can confirm
-directly (the program code, the academic year, the meeting-date line, whether
-minutes are attached, and whether any student A-Number or 7-8 digit identifier
-survives in the text). Those facts are given to the model as ground truth and
-recorded in `script_verified_facts` in `<name>_detail.json`.
-
-Long reports are not cut in half. Their pages are ranked by relevance to the
-rubric criteria and only the top-scoring pages are sent to the model, with a
-note stating how much was left out. The `<name>_feedback.md` file ends with a
-**Requires human verification** list naming every criterion that earned points
-without a findable quote, so a reviewer knows exactly which scores to check.
-
-To actually send reports by email, copy `backend/email_config.example.json` to
-`backend/email_config.json` and fill in your SMTP details:
-
-```json
-{
-  "smtp_host": "smtp.gmail.com",
-  "smtp_port": 587,
-  "smtp_user": "you@example.edu",
-  "smtp_password": "your-app-password",
-  "sender": "you@example.edu",
-  "use_tls": true
-}
-```
-
-Until that file exists the email button tells you it is not configured and shows
-the feedback text instead of failing silently.
-
 The model used is chosen automatically from the models installed in Ollama
 (deepseek-r1, qwen2.5, qwq, llama3.1, mistral — first match wins). Override it
 with `EVAL_MODEL=<model> ./linux_start.sh`.
-
 ### PDF conversion setup
 
 Run from the project directory with Python 3.10 or newer:
