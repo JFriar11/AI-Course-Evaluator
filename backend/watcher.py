@@ -5,10 +5,12 @@ section rubrics, so the model can actually see criteria 1.1 - 5.5.
 """
 import json
 import re
+import shutil
 import time
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, RLock, Thread
 from typing import Any, Callable, Dict, List, Optional
 
 from console import safe_print as print
@@ -33,16 +35,28 @@ from config import (
     RECHECK_TIMEOUT_SECONDS,
     SECTION_RUBRICS,
     SECTION_LABELS,
+    SINGLE_PASS_CHAR_LIMIT,
+    CHUNK_MAX_CHARS,
+    CHUNK_OVERLAP_CHARS,
+    OLLAMA_NUM_CTX,
+    OLLAMA_NUM_THREAD,
+    QWEN_THINK_ON_SCORING,
     ensure_directories,
     is_thinking_model,
     ollama_is_running,
     model_is_available,
 )
 from pdf_extraction import extract_pdf, save_extraction
+from skills.qwen_skills import ContextChunkSkill, PreEvalSkill, document_char_budget, qwen_kwargs
 
 EVALUATE_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 RUBRICS_DIR.mkdir(exist_ok=True)
+
+# One model call at a time. The queue in server.py already serialises jobs,
+# but a watcher run in a separate process must not overlap with anything else
+# that touches Ollama.
+MODEL_LOCK = RLock()
 
 MODEL_OUTPUT_TEMPLATE_PATH = Path(__file__).resolve().parent / "evaluation-output-template.json"
 
@@ -879,14 +893,14 @@ def recheck_criteria(
         "additionalProperties": False,
     }
 
-    call_kwargs: Dict[str, Any] = {
-        "model": model,
-        "messages": [{"role": "user", "content": build_recheck_prompt(flagged, missed_criteria, hints, rubric_text)}],
-        "format": schema,
-        "options": {"temperature": TEMPERATURE, "num_ctx": MODEL_CONTEXT_TOKENS},
-    }
-    if is_thinking_model(model):
-        call_kwargs["think"] = True
+    call_kwargs = qwen_kwargs(
+        [{"role": "user", "content": build_recheck_prompt(flagged, missed_criteria, hints, rubric_text)}],
+        model=model,
+        # The re-check is where a fabricated quote is caught, so this pass is
+        # allowed to think even when the first pass did not.
+        think=True,
+        schema=schema,
+    )
 
     print(f"[AI] Re-checking {len(to_redecide)} criteria: {len(flagged)} awarded points on a "
           f"quote that is not in the report, {len(missed_criteria)} scored 0 despite "
@@ -1046,7 +1060,137 @@ def stream_evaluation(progress: Optional[Callable[[str, int, int], None]] = None
             stream.close()
 
 
+<<<<<<< Updated upstream
 def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None]] = None,
+=======
+# -------------------------------------------------------------
+# 3. Pre-evaluation stop: write the same files, with nothing graded
+# -------------------------------------------------------------
+def stopped_result(stem: str, extraction, templates: ScorecardTemplates,
+                   chosen_model: str, reason: str, warnings: List[str],
+                   extraction_info: Dict[str, object],
+                   pre_eval: Dict[str, object]) -> Dict[str, object]:
+    """Write valid scorecard/detail/feedback/audit files for a stopped report.
+
+    The UI reads the same keys as a completed run, so an early stop renders as
+    a 0/23 report with the reason, rather than a broken or missing result.
+    """
+    criterion_headings = load_criterion_texts()
+    scorecard: Dict[str, Any] = {}
+    sections: List[Dict[str, Any]] = []
+    for key, criterion_ids in templates.sections.items():
+        criteria = {
+            criterion_id: {
+                "score": 0.0,
+                "evidence": "",
+                "note": "Not evaluated: evaluation stopped before the model saw this report.",
+                "evidence_verified": False,
+                "evidence_source": "not_evaluated",
+                "review_hint": "",
+                "possible_missed_point": False,
+            }
+            for criterion_id in criterion_ids
+        }
+        scorecard[key] = {"criteria": criteria, "section_score": 0.0, "verified_section_score": 0.0}
+        sections.append({
+            "key": key,
+            "label": SECTION_LABELS.get(key, key.replace("_", " ").title()),
+            "max": len(criterion_ids),
+            "score": 0.0,
+            "criteria": [
+                {"id": criterion_id, "score": 0.0, "heading": criterion_headings.get(criterion_id, criterion_id),
+                 "evidence": "", "note": criteria[criterion_id]["note"], "evidence_verified": False}
+                for criterion_id in criterion_ids
+            ],
+        })
+    scorecard["total_calculated_score"] = 0.0
+    scorecard["unverified_evidence"] = 0
+    scorecard["missed_point_review"] = 0
+    scorecard["sections_review"] = sections
+    scorecard["verified_score"] = 0.0
+    scorecard["max_points_possible"] = templates.max_points
+    scorecard["stopped_reason"] = reason
+    scorecard["human_review_required"] = True
+    scorecard["pre_evaluation"] = {"warnings": warnings, "checks": pre_eval.get("checks", [])}
+
+    feedback = "\n".join([
+        "# Assessment Feedback",
+        "",
+        "## Evaluation stopped before grading",
+        reason,
+        "",
+        "The document was inspected by the pre-evaluation gate and did not reach "
+        "the rubric pass. Every criterion is recorded as 0.0 so the scorecard "
+        "structure stays intact; a human must decide whether this is the right call.",
+        "",
+        "## Warnings",
+        *(f"- {warning}" for warning in warnings),
+        "",
+        f"## Total: 0.0 / {templates.max_points}",
+        "Evidenced total: 0.0 / " + str(templates.max_points),
+    ])
+
+    detail_payload = {
+        "model": chosen_model,
+        "raw_model_output": {},
+        "sections": sections,
+        "summary": reason,
+        "unverified_evidence": 0,
+        "verified_score": 0.0,
+        "script_verified_facts": deterministic_checks(extraction.text),
+        "review_hints": {},
+        "recheck": {"attempted": False, "changed": 0, "flagged": 0, "under_credited": 0},
+        "page_count": len(extraction.pages),
+        "document_characters": len(extraction.text),
+        "ocr_pages": extraction_info.get("ocr_pages", 0),
+        "figure_captions": getattr(extraction, "figure_captions", 0),
+        "truncated": False,
+        "stopped": True,
+        "stopped_reason": reason,
+        "pre_evaluation": {"warnings": warnings, "checks": pre_eval.get("checks", [])},
+    }
+
+    paths = {
+        "scorecard": OUTPUT_DIR / f"{stem}_scorecard.json",
+        "feedback": OUTPUT_DIR / f"{stem}_feedback.md",
+        "detail": OUTPUT_DIR / f"{stem}_detail.json",
+        "audit_trail": OUTPUT_DIR / f"{stem}_audit_trail.txt",
+        "extracted_text": OUTPUT_DIR / f"{stem}_extracted.txt",
+        "source_pdf": OUTPUT_DIR / f"{stem}_source.pdf",
+    }
+    paths["scorecard"].write_text(json.dumps(scorecard, indent=2, ensure_ascii=False), encoding="utf-8")
+    paths["feedback"].write_text(feedback, encoding="utf-8")
+    paths["detail"].write_text(json.dumps(detail_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    paths["audit_trail"].write_text(
+        "PRE-EVALUATION TRACE\n====================\n\n"
+        f"Stopped: {reason}\n\n"
+        + "\n".join(f"- {warning}" for warning in warnings) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "status": "stopped",
+        "stopped": True,
+        "stem": stem,
+        "filename": extraction.source,
+        "model": chosen_model,
+        "scorecard": scorecard,
+        "detail": detail_payload,
+        "sections": sections,
+        "feedback": feedback,
+        "reasoning": "",
+        "extraction": extraction_info,
+        "max_points": templates.max_points,
+        "unverified_evidence": 0,
+        "missed_point_review": 0,
+        "recheck": {"attempted": False},
+        "stop_reason": reason,
+        "files": {key: str(value) for key, value in paths.items()},
+    }
+
+
+def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int]]] = None,
+>>>>>>> Stashed changes
               output_stem: Optional[str] = None,
               should_stop: Optional[Callable[[], bool]] = None,
               model: Optional[str] = None) -> Dict[str, object]:
@@ -1060,6 +1204,32 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
     `model` overrides the configured model for this run.
     """
     chosen_model = model or MODEL
+    stem = output_stem or Path(file_path).stem
+
+    # Heartbeat log: every progress tick is timestamped so the audit trail can
+    # show when the model was actually working (and when it stalled).
+    heartbeats: List[Dict[str, object]] = []
+
+    def record_progress(phase: str, elapsed: int, characters: int) -> None:
+        heartbeats.append({
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "phase": phase,
+            "elapsed": elapsed,
+            "characters": characters,
+        })
+        if progress:
+            progress(phase, elapsed, characters)
+
+    # Keep the source PDF in Output/ so the graded report can be re-opened and
+    # audited later without the original upload path.
+    source_pdf = OUTPUT_DIR / f"{stem}_source.pdf"
+    if Path(file_path).resolve() != source_pdf.resolve():
+        try:
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(file_path, source_pdf)
+        except OSError as exc:
+            print(f"[WARNING] Could not save a copy of the source PDF: {exc}", flush=True)
+
     try:
         rubric_text = load_full_rubric()
     except Exception as exc:
@@ -1084,13 +1254,14 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
     except Exception as exc:
         raise EvaluationError(f"Could not read the PDF: {exc}") from exc
 
-    stem = output_stem or Path(file_path).stem
     text_path = save_extraction(extraction, OUTPUT_DIR, stem)
     extraction_info = {
         "pages": len(extraction.pages),
         "ocr_pages": sum(1 for page in extraction.pages if page.method == "ocr"),
         "characters": len(extraction.text),
+        "figure_captions": getattr(extraction, "figure_captions", 0),
         "methods": [page.method for page in extraction.pages],
+        "single_pass_char_limit": SINGLE_PASS_CHAR_LIMIT,
     }
 
     if not extraction.ready:
@@ -1107,47 +1278,79 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
             f"Review the extraction report and supply a corrected PDF. {problems}"
         )
 
+    # Pre-evaluation gate: is this really a report, and is it trying to talk the
+    # grader out of the rubric? Stop before spending CPU on a bad document.
+    if should_stop and should_stop():
+        raise EvaluationError("Grading was stopped by the user.")
+    with MODEL_LOCK:
+        pre_eval = PreEvalSkill.evaluate(extraction.text, model=chosen_model, progress=record_progress)
+    if not pre_eval["is_valid"]:
+        print(f"[AI] {pre_eval['stop_reason']}", flush=True)
+        return stopped_result(stem, extraction, templates, chosen_model,
+                              pre_eval["stop_reason"], list(pre_eval["warnings"]),
+                              extraction_info, pre_eval)
+
     truncated = False
+    chunked = False
     # Headings label the criteria in the UI; the fuller description text is what
     # the document is searched against, because a report rarely repeats a heading
     # verbatim ("Artifact Samples Supplied" vs. "deliverables were submitted").
     criterion_headings = load_criterion_texts()
     criterion_texts = load_criterion_descriptions()
-    if len(extraction.text) > MAX_DOC_CHARS:
-        # Reserve room for the note that tells the model what it is not seeing,
-        # so the prompt never exceeds the context budget.
-        document_text = select_relevant_pages(extraction.pages, criterion_texts, MAX_DOC_CHARS - 800)
-        document_text += relevance_note(extraction.text, document_text)
-        truncated = True
-        print(
-            f"[AI] Document is {len(extraction.text):,} characters; "
-            f"{len(extraction.text) - len(document_text):,} characters of less "
-            "relevant pages were omitted so the model only sees material tied to "
-            f"the criteria. Full text saved to {text_path.resolve()}",
-            flush=True,
-        )
-    else:
-        document_text = extraction.text
+    full_text = pre_eval.get("cleaned_text") or extraction.text
+    budget = document_char_budget(rubric_text, build_evaluation_prompt(rubric_text, "", templates))
 
-    verified_facts = deterministic_checks(document_text)
+    if len(full_text) <= SINGLE_PASS_CHAR_LIMIT:
+        document_text = full_text
+    else:
+        try:
+            prepared = ContextChunkSkill.prepare_document(
+                full_text, list(SECTION_LABELS.values()), model=chosen_model,
+                budget=min(SINGLE_PASS_CHAR_LIMIT, budget), progress=record_progress)
+            document_text = prepared["document"]
+            chunked = True
+            extraction_info["chunked"] = True
+            extraction_info["chunks"] = prepared["chunks"]
+            extraction_info["chunk_boundaries"] = prepared.get("chunk_boundaries", [])
+            extraction_info["condensed_characters"] = prepared.get("condensed_characters", 0)
+            print(f"[AI] Report is {len(full_text):,} characters: read in {prepared['chunks']} "
+                  f"overlapping parts and condensed to {prepared['condensed_characters']:,} "
+                  f"characters of quoted evidence. Nothing was cut off; the full text is "
+                  f"saved to {text_path.resolve()}", flush=True)
+        except Exception as exc:
+            # Chunk condensing failed (model hiccup): fall back to the page
+            # relevance selection rather than losing the document entirely.
+            document_text = select_relevant_pages(extraction.pages, criterion_texts, budget - 800)
+            dropped = len(full_text) - len(document_text)
+            document_text += relevance_note(full_text, document_text)
+            truncated = True
+            extraction_info["chunked"] = False
+            print(f"[AI] Chunk condensing failed ({exc}); grading the most relevant "
+                  f"{len(document_text):,} of {len(full_text):,} characters "
+                  f"({dropped:,} omitted from the prompt, the full text is saved).", flush=True)
+
+    verified_facts = deterministic_checks(full_text)
     prompt = build_evaluation_prompt(rubric_text, document_text, templates, verified_facts)
     extraction_info["truncated"] = truncated
+    extraction_info["chunked"] = chunked
     print(f"[AI] Requesting {chosen_model} "
-          f"(reasoning trace {'enabled' if is_thinking_model(chosen_model) else 'not supported'}); "
+          f"(thinking {'on' if is_thinking_model(chosen_model) and QWEN_THINK_ON_SCORING else 'off'}; "
+          f"reasoning trace {'supported' if is_thinking_model(chosen_model) else 'not supported'}); "
           f"progress every {PROGRESS_INTERVAL}s.", flush=True)
 
-    call_kwargs: Dict[str, Any] = {
-        "model": chosen_model,
-        "messages": [{"role": "user", "content": prompt}],
-        "format": templates.schema,
-        "options": {"temperature": TEMPERATURE, "num_ctx": MODEL_CONTEXT_TOKENS},
-    }
-    if is_thinking_model(chosen_model):
-        call_kwargs["think"] = True
-
-    raw_json, reasoning_trace = stream_evaluation(
-        progress=progress, should_stop=should_stop, **call_kwargs
+    call_kwargs = qwen_kwargs(
+        [{"role": "user", "content": prompt}],
+        model=chosen_model,
+        think=QWEN_THINK_ON_SCORING,
+        schema=templates.schema,
     )
+
+    with MODEL_LOCK:
+        scoring_started = time.monotonic()
+        raw_json, reasoning_trace = stream_evaluation(
+            progress=record_progress, should_stop=should_stop, **call_kwargs
+        )
+    model_elapsed = int(time.monotonic() - scoring_started)
 
     try:
         model_output = json.loads(raw_json)
@@ -1214,7 +1417,7 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
             try:
                 recheck.update(recheck_criteria(
                     sections, hints, rubric_text, chosen_model, missed=missed_criteria,
-                    should_stop=should_stop, progress=progress,
+                    should_stop=should_stop, progress=record_progress,
                 ))
                 unverified = verify_evidence(sections, extraction.text, rubric_text, verified_facts)
                 # A zero the model kept even after being shown the passages is no
@@ -1284,6 +1487,7 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
         "detail": OUTPUT_DIR / f"{stem}_detail.json",
         "audit_trail": OUTPUT_DIR / f"{stem}_audit_trail.txt",
         "extracted_text": text_path,
+        "source_pdf": source_pdf,
     }
     paths["scorecard"].write_text(json.dumps(scorecard, indent=2, ensure_ascii=False), encoding="utf-8")
     paths["feedback"].write_text(feedback, encoding="utf-8")
@@ -1300,12 +1504,90 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
         "page_count": len(extraction.pages),
         "document_characters": len(extraction.text),
         "ocr_pages": extraction_info.get("ocr_pages", 0),
+        "figure_captions": extraction_info.get("figure_captions", 0),
         "truncated": extraction_info.get("truncated", False),
+        "chunked": extraction_info.get("chunked", False),
+        "single_pass_char_limit": SINGLE_PASS_CHAR_LIMIT,
+        "pre_evaluation": {"warnings": list(pre_eval["warnings"]),
+                           "checks": pre_eval.get("checks", [])},
     }
     paths["detail"].write_text(json.dumps(detail_payload, indent=2, ensure_ascii=False), encoding="utf-8")
-    paths["audit_trail"].write_text(
-        "MODEL REASONING TRACE\n======================\n\n" + reasoning_trace, encoding="utf-8"
-    )
+    audit_lines = [
+        "AUDIT TRAIL",
+        "===========",
+        "",
+        f"Model: {chosen_model}",
+        f"Thinking mode for scoring: {'on' if QWEN_THINK_ON_SCORING else 'off'}",
+        f"Context lock: num_ctx capped at {min(OLLAMA_NUM_CTX, MODEL_CONTEXT_TOKENS)} tokens, "
+        f"num_thread {OLLAMA_NUM_THREAD}, one report at a time",
+        "",
+        "PRE-EVALUATION GATE",
+        "-------------------",
+        "Valid report: yes",
+    ]
+    for warning in pre_eval.get("warnings", []):
+        audit_lines.append(f"- {warning}")
+    audit_lines.append("- Checks run: " + ", ".join(pre_eval.get("checks") or []))
+
+    audit_lines += [
+        "",
+        "DETERMINISTIC PRE-CHECKS (run by script before the model)",
+        "----------------------------------------------------------",
+    ]
+    for field, value in verified_facts.items():
+        audit_lines.append(f"- {field}: {value[:120]}")
+
+    audit_lines += [
+        "",
+        "DOCUMENT PREPARATION",
+        "--------------------",
+        f"Pages: {len(extraction.pages)} (OCR pages: {extraction_info.get('ocr_pages', 0)})",
+        f"Figure alt-text blocks injected: {extraction_info.get('figure_captions', 0)}",
+        f"Full extracted characters: {len(extraction.text):,}",
+        f"Single-pass limit: {SINGLE_PASS_CHAR_LIMIT:,} characters",
+    ]
+    if chunked:
+        boundaries = extraction_info.get("chunk_boundaries") or []
+        audit_lines.append(
+            f"Chunked: {extraction_info.get('chunks', 0)} parts of at most "
+            f"{CHUNK_MAX_CHARS:,} characters with {CHUNK_OVERLAP_CHARS} characters of overlap, "
+            f"condensed to {extraction_info.get('condensed_characters', 0):,} characters "
+            "for the prompt (the full text is saved and used for quote verification)"
+        )
+        if boundaries:
+            audit_lines.append(
+                "Chunk boundaries (character offsets in the full text): "
+                + ", ".join(f"{start}-{end}" for start, end in boundaries[:30])
+            )
+    else:
+        audit_lines.append("Chunked: no (document fit in one pass)")
+    if truncated:
+        audit_lines.append(f"Degraded fallback: {len(document_text):,} of "
+                           f"{len(full_text):,} characters reached the prompt")
+
+    audit_lines += [
+        "",
+        "MODEL CALL",
+        "----------",
+        f"Scoring call: {model_elapsed}s (heartbeat printed every {PROGRESS_INTERVAL}s)",
+        f"Re-check call: {'attempted, ' + str(recheck.get('changed', 0)) + ' criteria revised' if recheck.get('attempted') else 'not needed'}",
+        f"Evidence strings the script could not trace: {unverified} of {total_criteria}",
+    ]
+    if heartbeats:
+        audit_lines += ["", "HEARTBEAT TIMELINE", "------------------"]
+        for beat in heartbeats:
+            audit_lines.append(
+                f"{beat['timestamp']}  +{beat['elapsed']:>4}s  "
+                f"{beat['characters']:>7} chars  {beat['phase']}"
+            )
+    audit_lines += [
+        "",
+        "MODEL REASONING TRACE",
+        "======================",
+        "",
+        reasoning_trace,
+    ]
+    paths["audit_trail"].write_text("\n".join(audit_lines) + "\n", encoding="utf-8")
 
     if unverified:
         print(f"[AI] {unverified} of {total_criteria} evidence strings could not be "

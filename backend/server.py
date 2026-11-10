@@ -9,6 +9,7 @@ Grading is slow (a thinking model on a laptop), so uploads return a job id
 immediately and the UI polls /api/jobs/<id> for progress.
 """
 import json
+import queue
 import shutil
 import threading
 import time
@@ -25,15 +26,23 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from config import (
+<<<<<<< Updated upstream
+=======
+    EMAIL_CONFIG_PATH,
+    EVALUATE_DIR,
+>>>>>>> Stashed changes
     FRONTEND_DIST,
     HOST,
     MAX_DOC_CHARS,
     MODEL,
+    OLLAMA_NUM_CTX,
+    OLLAMA_NUM_THREAD,
     OLLAMA_URL,
     OUTPUT_DIR,
     PORT,
     RUBRICS_DIR,
     SECTION_LABELS,
+    SINGLE_PASS_CHAR_LIMIT,
     ensure_directories,
     model_is_available,
     ollama_is_running,
@@ -64,6 +73,72 @@ app.add_middleware(
 
 JOBS: Dict[str, dict] = {}
 JOBS_LOCK = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# One FIFO grading worker.
+#
+# CPU inference on this machine is not safe to run in parallel: two Ollama
+# calls at once split the thread budget and make the same report score
+# differently depending on how many others were in flight. A single daemon
+# worker drains the queue, so every report gets 100% of the allocated threads
+# and identical performance no matter how many uploads arrive at once.
+# ---------------------------------------------------------------------------
+JOB_QUEUE = queue.Queue()
+WORKER_STARTED = threading.Event()
+
+
+def source_pdf_path(stem: str) -> Path:
+    """Where the copy of a graded report's original PDF lives."""
+    return OUTPUT_DIR / f"{Path(stem).name}_source.pdf"
+
+
+def enqueue_job(job_id: str, pdf_path: Path, output_stem: str,
+                model: Optional[str] = None) -> None:
+    """Put a report at the back of the FIFO queue."""
+    JOB_QUEUE.put((job_id, Path(pdf_path), output_stem, model))
+
+
+def _grading_worker_loop() -> None:
+    while True:
+        job_id, pdf_path, output_stem, model = JOB_QUEUE.get()
+        try:
+            with JOBS_LOCK:
+                job = JOBS.get(job_id)
+            if job is None:
+                continue
+            if job.get("cancelled") or job.get("status") == "cancelled":
+                _set_job(job_id, status="cancelled", phase="Cancelled before it started")
+                if pdf_path.exists() and pdf_path.resolve() != source_pdf_path(output_stem).resolve():
+                    pdf_path.unlink()
+                continue
+            _run_grading(job_id, pdf_path, output_stem, model)
+        except Exception as exc:  # pragma: no cover - the worker must never die
+            _set_job(job_id, status="error", phase=f"Worker failure: {exc}", error=str(exc))
+        finally:
+            JOB_QUEUE.task_done()
+
+
+def start_grading_worker() -> None:
+    """Start the single grading worker exactly once (safe to call repeatedly)."""
+    if WORKER_STARTED.is_set():
+        return
+    WORKER_STARTED.set()
+    threading.Thread(target=_grading_worker_loop, daemon=True,
+                     name="grading-worker").start()
+
+
+def queue_status() -> Dict[str, int]:
+    queued = running = 0
+    with JOBS_LOCK:
+        for job in JOBS.values():
+            if job["status"] == "queued":
+                queued += 1
+            elif job["status"] in ("extracting", "grading"):
+                running += 1
+    return {"queued": queued, "running": running, "worker_started": int(WORKER_STARTED.is_set())}
+
+
+start_grading_worker()
 
 
 @dataclass
@@ -116,7 +191,9 @@ def _run_grading(job_id: str, pdf_path: Path, output_stem: str, model: Optional[
         _set_job(job_id, status="error", phase=f"Unexpected failure: {exc}", error=f"{type(exc).__name__}: {exc}", error_traceback=traceback.format_exc(),
                  elapsed=int(time.monotonic() - started))
     finally:
-        if pdf_path.exists():
+        # The upload's source PDF is kept in Output/ for auditing; only
+        # throwaway temp copies are removed.
+        if pdf_path.exists() and pdf_path.resolve() != source_pdf_path(output_stem).resolve():
             pdf_path.unlink()
 
     # The result is already saved and marked complete before optional delivery.
@@ -149,9 +226,19 @@ def health():
         "sections": [SECTION_LABELS[key] for key in templates.sections] if templates else [],
         "max_points": templates.max_points if templates else 0,
         "max_doc_chars": MAX_DOC_CHARS,
+        "single_pass_char_limit": SINGLE_PASS_CHAR_LIMIT,
+        "num_ctx": OLLAMA_NUM_CTX,
+        "num_thread": OLLAMA_NUM_THREAD,
+        "queue": queue_status(),
         "frontend_built": FRONTEND_DIST.exists(),
         "output_dir": str(OUTPUT_DIR),
     }
+
+
+@app.get("/api/queue")
+def queue_endpoint():
+    """How many reports are waiting and how many are being graded."""
+    return queue_status()
 
 
 @app.get("/api/rubrics")
@@ -194,8 +281,13 @@ def cancel_job(job_id: str):
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    if job["status"] in ("done", "error"):
+    if job["status"] in ("done", "error", "cancelled"):
         return {"job_id": job_id, "status": job["status"]}
+    if job["status"] == "queued":
+        # Never reached the worker: drop it from the queue outright.
+        _set_job(job_id, cancelled=True, status="cancelled",
+                 phase="Cancelled before it started")
+        return {"job_id": job_id, "status": "cancelled"}
     _set_job(job_id, cancelled=True, phase="Stopping...")
     return {"job_id": job_id, "status": "cancelling"}
 
@@ -212,8 +304,11 @@ async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(Non
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     safe_name = Path(file.filename).name
-    temp_path = OUTPUT_DIR / f"upload_{uuid.uuid4().hex[:8]}_{safe_name}"
-    with temp_path.open("wb") as buffer:
+    stem = Path(safe_name).stem
+    # The uploaded PDF is persisted as the source of truth for this report,
+    # so the graded result can always be traced back to the exact file.
+    saved_source = source_pdf_path(stem)
+    with saved_source.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     job = Job(id=uuid.uuid4().hex, filename=safe_name, started_at=time.monotonic(),
@@ -221,13 +316,10 @@ async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(Non
     with JOBS_LOCK:
         JOBS[job.id] = asdict(job)
 
-    thread = threading.Thread(
-        target=_run_grading,
-        args=(job.id, temp_path, Path(safe_name).stem, model),
-        daemon=True,
-    )
-    thread.start()
-    return {"job_id": job.id, "filename": safe_name, "model": model or MODEL}
+    start_grading_worker()
+    enqueue_job(job.id, saved_source, stem, model)
+    return {"job_id": job.id, "filename": safe_name, "model": model or MODEL,
+           "source_pdf": str(saved_source), "queue": queue_status()}
 
 
 @app.get("/api/jobs/{job_id}/download/{kind}")
@@ -243,7 +335,7 @@ def download(job_id: str, kind: str):
         raise HTTPException(status_code=404, detail="File no longer exists")
     media = {"scorecard": "application/json", "detail": "application/json",
              "feedback": "text/markdown", "audit_trail": "text/plain",
-             "extracted_text": "text/plain"}[kind]
+             "extracted_text": "text/plain", "source_pdf": "application/pdf"}[kind]
     return FileResponse(path, media_type=media, filename=path.name)
 
 
@@ -352,6 +444,10 @@ def _saved_result(stem: str) -> dict:
                 1 for page in extraction.get("pages", []) or [] if page.get("method") == "ocr"
             ),
             "truncated": bool(detail.get("truncated", False)),
+            "figure_captions": int(detail.get("figure_captions",
+                                             extraction.get("figure_captions", 0)) or 0),
+            "chunked": bool(detail.get("chunked", False)),
+            "single_pass_char_limit": detail.get("single_pass_char_limit", SINGLE_PASS_CHAR_LIMIT),
         },
         "files": {
             "scorecard": str(scorecard_path),
@@ -415,6 +511,9 @@ def download_saved(stem: str, kind: str):
         "feedback": "_feedback.md",
         "audit_trail": "_audit_trail.txt",
         "extracted_text": "_extracted.txt",
+        "pdf": "_source.pdf",
+        "source": "_source.pdf",
+        "source_pdf": "_source.pdf",
     }
     if kind not in suffix:
         raise HTTPException(status_code=400, detail=f"Unknown download '{kind}'")
@@ -426,7 +525,8 @@ def download_saved(stem: str, kind: str):
         raise HTTPException(status_code=404, detail="That file does not exist")
     media = {"scorecard": "application/json", "detail": "application/json",
              "feedback": "text/markdown", "audit_trail": "text/plain",
-             "extracted_text": "text/plain"}[kind]
+             "extracted_text": "text/plain", "pdf": "application/pdf",
+             "source": "application/pdf", "source_pdf": "application/pdf"}[kind]
     return FileResponse(path, media_type=media, filename=path.name)
 
 
@@ -453,6 +553,39 @@ else:
         return _fallback_page()
 
 
+def start_inbox_watcher():
+    """Watch Evaluate/ and push every dropped PDF onto the same FIFO queue.
+
+    Folder drops and web uploads are graded by the same single worker, so an
+    upload arriving while a folder drop is in flight never causes two Ollama
+    calls to run at once.
+    """
+    from watchdog.events import FileSystemEventHandler
+    from watchdog.observers import Observer
+
+    class _QueueInboxHandler(FileSystemEventHandler):
+        def on_created(self, event):
+            if event.is_directory:
+                return
+            path = Path(event.src_path)
+            if path.suffix.lower() != ".pdf":
+                return
+            time.sleep(1.5)  # let the file finish writing/transferring
+            job = Job(id=uuid.uuid4().hex, filename=path.name,
+                      started_at=time.monotonic(), model=MODEL)
+            with JOBS_LOCK:
+                JOBS[job.id] = asdict(job)
+            start_grading_worker()
+            enqueue_job(job.id, path, path.stem, MODEL)
+            print(f"[QUEUE] Queued {path.name} from {EVALUATE_DIR}/", flush=True)
+
+    ensure_directories()
+    observer = Observer()
+    observer.schedule(_QueueInboxHandler(), path=str(EVALUATE_DIR), recursive=False)
+    observer.start()
+    return observer
+
+
 def _startup_banner() -> None:
     ensure_directories()
     print("=" * 60)
@@ -470,13 +603,19 @@ def _startup_banner() -> None:
     if not FRONTEND_DIST.exists():
         print("[WARNING] frontend/dist is missing - run the launcher to build the UI.")
     print(f"Open http://{HOST}:{PORT}")
+    print(f"Grading: one report at a time (num_thread={OLLAMA_NUM_THREAD}, "
+          f"num_ctx starts at {OLLAMA_NUM_CTX})")
     print("=" * 60)
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
     _startup_banner()
+    if os.environ.get("WATCH_INBOX", "true").lower() not in ("0", "false", "no"):
+        start_inbox_watcher()
+        print(f"Watching {EVALUATE_DIR}/ for PDFs you drop in.")
     try:
         webbrowser.open(f"http://{HOST}:{PORT}")
     except Exception:

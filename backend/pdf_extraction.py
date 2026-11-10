@@ -6,6 +6,8 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+from skills.qwen_skills import VisionAltTextSkill
+
 
 @dataclass
 class PageText:
@@ -14,12 +16,14 @@ class PageText:
     method: str
     error: str | None = None
     needs_manual_review: bool = False
+    figure_captions: int = 0
 
 
 @dataclass
 class Extraction:
     source: str
     pages: list[PageText]
+    figure_captions: int = 0
 
     @property
     def ready(self) -> bool:
@@ -72,8 +76,16 @@ def ocr_page(path: Path, index: int) -> str:
             page.close()
 
 
+def _with_figures(text: str, figure_alt_text: str) -> str:
+    """Inject generated figure descriptions before the page is saved."""
+    if not figure_alt_text:
+        return text
+    return f"{text}\n{figure_alt_text}".strip()
+
+
 def extract_pdf(path: Path) -> Extraction:
     pages = []
+    captioned_figures = 0
     with path.open("rb") as stream:
         reader = PdfReader(stream)
         if reader.is_encrypted and not reader.decrypt(""):
@@ -81,6 +93,13 @@ def extract_pdf(path: Path) -> Extraction:
         if not reader.pages:
             raise ValueError("PDF contains no pages.")
         for number, page in enumerate(reader.pages, start=1):
+            # Embedded charts are captioned before the page text is assembled,
+            # so the grading model and the quote verifier both see figure
+            # content and `{stem}_extracted.txt` contains it.
+            figure_alt_text = VisionAltTextSkill.caption_page_images(page, number)
+            figure_count = figure_alt_text.count("[FIGURE")
+            captioned_figures += figure_count
+
             text = ""
             try:
                 # Keep rotated labels and passages; layout may be imperfect, but
@@ -96,22 +115,28 @@ def extract_pdf(path: Path) -> Extraction:
             # An embedded logo or figure is not a reason to re-render a page that
             # already reads well.
             if alnum >= 40:
-                pages.append(PageText(number, text, "embedded"))
+                pages.append(PageText(number, _with_figures(text, figure_alt_text),
+                                     "embedded", figure_captions=figure_count))
                 continue
             try:
                 recognized = clean_text(ocr_page(path, number - 1))
                 if not recognized or sum(c.isalnum() for c in recognized) < 40:
                     raise ValueError("Little or no readable text; inspect this page (it may be blank).")
-                pages.append(PageText(number, recognized, "ocr"))
+                pages.append(PageText(number, _with_figures(recognized, figure_alt_text),
+                                     "ocr", figure_captions=figure_count))
             except Exception as exc:
                 # A scanned page with no text is a real problem. A page with some
                 # selectable text plus an unavailable OCR engine is a warning, not
                 # a hard stop: grading can still proceed on what is legible.
                 if alnum >= 40:
-                    pages.append(PageText(number, text, "embedded", f"OCR skipped: {exc}"))
+                    pages.append(PageText(number, _with_figures(text, figure_alt_text),
+                                         "embedded", f"OCR skipped: {exc}",
+                                         figure_captions=figure_count))
                 else:
-                    pages.append(PageText(number, text, "failed", str(exc), needs_manual_review=True))
-    return Extraction(path.name, pages)
+                    pages.append(PageText(number, _with_figures(text, figure_alt_text),
+                                         "failed", str(exc), needs_manual_review=True,
+                                         figure_captions=figure_count))
+    return Extraction(path.name, pages, captioned_figures)
 
 
 def save_extraction(result: Extraction, directory: Path, stem: str) -> Path:

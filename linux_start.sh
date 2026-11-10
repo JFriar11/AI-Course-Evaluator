@@ -32,18 +32,23 @@ if ! command -v ollama >/dev/null 2>&1; then
     echo "[WARNING] Ollama is not installed. Install it from https://ollama.com"
     echo "          The app will still open, but grading needs a local model."
 else
+    # One report at a time and the model kept resident: parallel Ollama calls
+    # split the CPU thread budget, so the same PDF scores differently run to run.
+    export OLLAMA_NUM_PARALLEL=1
+    export OLLAMA_KEEP_ALIVE=-1
+    export EVAL_MODEL="${EVAL_MODEL:-qwen3:8b}"
+
     if ! curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
         echo "Starting the local model server (ollama serve)..."
-        ollama serve >/dev/null 2>&1 &
+        OLLAMA_NUM_PARALLEL=1 OLLAMA_KEEP_ALIVE=-1 ollama serve >/dev/null 2>&1 &
         for _ in 1 2 3 4 5 6 7 8 9 10; do
             curl -s http://localhost:11434/api/tags >/dev/null 2>&1 && break
             sleep 1
         done
     fi
-    if ! curl -s http://localhost:11434/api/tags | grep -o '"name"' >/dev/null 2>&1; then
-        echo "[ACTION REQUIRED] No models are installed in Ollama yet."
-        echo "                Run:  ollama pull llama3.1"
-        echo "                (about 4.9 GB, one time, then it stays on disk)"
+    if ! curl -s http://localhost:11434/api/tags | grep -q "$EVAL_MODEL"; then
+        echo "Pulling $EVAL_MODEL (one time, stays on disk)..."
+        ollama pull "$EVAL_MODEL"
     fi
 fi
 

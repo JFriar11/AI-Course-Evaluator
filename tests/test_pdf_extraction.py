@@ -5,7 +5,8 @@ import time
 import unittest
 from threading import Thread
 from pathlib import Path
-from unittest.mock import patch
+from contextlib import ExitStack
+from unittest.mock import MagicMock, patch
 from ollama import ChatResponse
 
 from pypdf import PdfWriter
@@ -14,7 +15,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from pdf_extraction import Extraction, PageText, extract_pdf, save_extraction
 import pdf_extraction
 import watcher
-from config import MAX_DOC_CHARS
+from config import MAX_DOC_CHARS, OLLAMA_NUM_CTX, OLLAMA_NUM_THREAD, SINGLE_PASS_CHAR_LIMIT
 
 
 def make_pdf(path, contents, rotated_text=None):
@@ -51,6 +52,25 @@ def model_output_json(templates, score=1.0):
     return json.dumps(payload)
 
 
+class PassThroughGate:
+    """Pre-evaluation gate stub.
+
+    These tests are about extraction, score math and quote verification. The gate
+    itself (report shape, prompt-injection scan, context chunking) is exercised in
+    tests/test_skills_and_queue.py.
+    """
+
+    @staticmethod
+    def evaluate(text, model=None, progress=None):
+        return {
+            "is_valid": True,
+            "stop_reason": None,
+            "cleaned_text": text,
+            "warnings": [],
+            "checks": ["report_shape (stubbed)"],
+        }
+
+
 class ExtractionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -66,16 +86,15 @@ class ExtractionTests(unittest.TestCase):
             patch.object(watcher, 'load_full_rubric', return_value='Rubric text'),
             patch.object(watcher, 'ollama_is_running', return_value=True),
             patch.object(watcher, 'model_is_available', return_value=True),
+            patch.object(watcher, 'PreEvalSkill', PassThroughGate),
             patch.object(watcher, 'chat', return_value=chat),
         ]
         if print_output is not None:
             patches.append(patch('builtins.print', new=print_output))
-        with patches[0], patches[1], patches[2], patches[3], patches[4]:
-            if print_output is not None:
-                with patch('builtins.print', new=print_output):
-                    watcher.grade_document(self.pdf)
-            else:
-                watcher.grade_document(self.pdf)
+        with ExitStack() as stack:
+            for p_ in patches:
+                stack.enter_context(p_)
+            watcher.grade_document(self.pdf)
 
     def test_digital_pdf_preserves_pages_and_saved_text(self):
         make_pdf(self.pdf, [self.text, self.text])
@@ -114,6 +133,7 @@ class ExtractionTests(unittest.TestCase):
              patch.object(watcher, 'load_full_rubric', return_value='Rubric text'), \
              patch.object(watcher, 'ollama_is_running', return_value=True), \
              patch.object(watcher, 'model_is_available', return_value=True), \
+             patch.object(watcher, 'PreEvalSkill', PassThroughGate), \
              patch('builtins.print', new=lambda *a, **k: printed.append(' '.join(str(x) for x in a))), \
              patch.object(watcher, 'chat') as chat:
             watcher.grade_document(self.pdf)
@@ -153,16 +173,19 @@ class ExtractionTests(unittest.TestCase):
              patch.object(watcher, 'load_full_rubric', return_value='Rubric text'), \
              patch.object(watcher, 'ollama_is_running', return_value=True), \
              patch.object(watcher, 'model_is_available', return_value=True), \
+             patch.object(watcher, 'PreEvalSkill', PassThroughGate), \
              patch.object(watcher, 'RECHECK_UNVERIFIED', False), \
              patch.object(watcher, 'chat') as mock_chat:
             mock_chat.return_value = chat
             watcher.grade_document(self.pdf)
         mock_chat.assert_called_once()
         self.assertTrue(mock_chat.call_args.kwargs['stream'])
-        self.assertEqual(
-            mock_chat.call_args.kwargs['options']['num_ctx'],
-            watcher.MODEL_CONTEXT_TOKENS,
-        )
+        options = mock_chat.call_args.kwargs['options']
+        # The window is locked to the configured floor and only grows when a
+        # particular prompt would otherwise be cut off.
+        self.assertGreaterEqual(options['num_ctx'], OLLAMA_NUM_CTX)
+        self.assertLessEqual(options['num_ctx'], watcher.MODEL_CONTEXT_TOKENS)
+        self.assertEqual(options['num_thread'], OLLAMA_NUM_THREAD)
         self.assertEqual(mock_chat.call_args.kwargs['format'], templates.schema)
 
         scorecard = json.loads((self.root / 'report_scorecard.json').read_text())
@@ -418,6 +441,7 @@ class ExtractionTests(unittest.TestCase):
              patch.object(watcher, 'load_full_rubric', return_value='Rubric text'), \
              patch.object(watcher, 'ollama_is_running', return_value=True), \
              patch.object(watcher, 'model_is_available', return_value=True), \
+             patch.object(watcher, 'PreEvalSkill', PassThroughGate), \
              patch('builtins.print', new=lambda *a, **k: printed.append(' '.join(str(x) for x in a))), \
              chat:
             watcher.grade_document(self.pdf)
@@ -431,6 +455,7 @@ class ExtractionTests(unittest.TestCase):
              patch.object(watcher, 'load_full_rubric', return_value='Rubric text'), \
              patch.object(watcher, 'ollama_is_running', return_value=True), \
              patch.object(watcher, 'model_is_available', return_value=True), \
+             patch.object(watcher, 'PreEvalSkill', PassThroughGate), \
              patch('builtins.print', new=lambda *a, **k: printed.append(' '.join(str(x) for x in a))), \
              patch.object(watcher, 'chat') as chat:
             watcher.grade_document(self.pdf)
@@ -725,6 +750,7 @@ class ExtractionTests(unittest.TestCase):
              patch.object(watcher, 'load_full_rubric', return_value='Rubric text'), \
              patch.object(watcher, 'ollama_is_running', return_value=True), \
              patch.object(watcher, 'model_is_available', return_value=True), \
+             patch.object(watcher, 'PreEvalSkill', PassThroughGate), \
              patch.object(watcher, 'chat', side_effect=fake_chat):
             watcher.grade_document(self.pdf)
 

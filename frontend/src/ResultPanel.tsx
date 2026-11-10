@@ -45,6 +45,9 @@ export default function ResultPanel({ job }: { job: Job }) {
           <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>{job.filename}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>
             {result.extraction.pages} pages · {result.extraction.ocr_pages} OCR · {result.extraction.characters.toLocaleString()} characters
+            {result.extraction.figure_captions ? ` · ${result.extraction.figure_captions} figure caption(s)` : ''}
+            {result.extraction.chunked ? ' · read in overlapping parts' : ''}
+            {result.extraction.truncated ? ' · some pages left out of the prompt' : ''}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -72,6 +75,17 @@ export default function ResultPanel({ job }: { job: Job }) {
         <div className="px-5 py-2" style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
           <p className="text-xs" style={{ color: 'var(--color-warning)', fontFamily: 'var(--font-mono)' }}>
             {unverified} evidence quote(s) could not be matched to the document text - check before submitting.
+          </p>
+        </div>
+      )}
+
+      {result.stopped && (
+        <div className="px-5 py-3" style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
+          <p className="text-sm" style={{ color: 'var(--color-danger)', fontFamily: 'var(--font-mono)' }}>
+            Evaluation stopped before grading: {result.stopped_reason || 'the document did not pass the pre-checks'}
+          </p>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>
+            A human still needs to read this report; the score of 0 is a placeholder, not a judgement.
           </p>
         </div>
       )}
@@ -168,6 +182,7 @@ export default function ResultPanel({ job }: { job: Job }) {
         <DownloadLink jobId={job.id} kind="detail" label="full detail" />
         <DownloadLink jobId={job.id} kind="audit_trail" label="audit trail" />
         <DownloadLink jobId={job.id} kind="extracted_text" label="extracted text" />
+        <DownloadLink jobId={job.id} kind="source_pdf" label="source PDF" />
       </div>
     </div>
   )

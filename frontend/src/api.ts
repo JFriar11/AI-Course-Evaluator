@@ -61,8 +61,20 @@ export interface JobResult {
   sections?: SectionSummary[]
   feedback: string
   reasoning: string
-  extraction: { pages: number; ocr_pages: number; characters: number; methods: string[] }
+  extraction: {
+    pages: number
+    ocr_pages: number
+    characters: number
+    methods: string[]
+    figure_captions?: number
+    chunked?: boolean
+    truncated?: boolean
+  }
   max_points: number
+  stopped?: boolean
+  stopped_reason?: string
+  human_review_required?: boolean
+  pre_evaluation?: { warnings: string[]; checks: string[] }
   unverified_evidence?: number
   recheck?: { attempted: boolean; changed: number; flagged: number }
   missed_point_review?: number
@@ -72,7 +84,7 @@ export interface JobResult {
 export interface Job {
   id: string
   filename: string
-  status: 'queued' | 'extracting' | 'grading' | 'done' | 'error'
+  status: 'queued' | 'extracting' | 'grading' | 'done' | 'error' | 'cancelled'
   phase: string
   elapsed: number
   characters: number

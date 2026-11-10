@@ -1,4 +1,5 @@
 #Ignore Sensitive Data
+.env
 Evaluate/
 inbox/
 Output/
