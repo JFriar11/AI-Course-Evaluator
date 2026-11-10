@@ -25,7 +25,6 @@ if (-not (Test-Path "frontend\dist\index.html")) {
     }
 }
 
-<<<<<<< Updated upstream
 # 3. Start Ollama and load the configured evaluation model
 $model = "deepseek-r1:8b"
 $env:EVAL_MODEL = $model
@@ -62,19 +61,6 @@ if (-not $ollamaCommand) {
         Write-Host "[WARNING] Ollama did not start. Grading needs Ollama and the model '$model'."
         Write-Host "          Start the service with: ollama serve"
     }
-=======
-# 3. Ollama check
-# One report at a time and the model kept resident: parallel Ollama calls split
-# the CPU thread budget, so the same PDF scores differently run to run.
-$env:OLLAMA_NUM_PARALLEL = "1"
-$env:OLLAMA_KEEP_ALIVE = "-1"
-if (-not $env:EVAL_MODEL) { $env:EVAL_MODEL = "qwen3:8b" }
-
-try {
-    Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -TimeoutSec 5 -UseBasicParsing | Out-Null
-} catch {
-    Write-Host "[WARNING] Ollama is not running. Start it with: ollama serve"
->>>>>>> Stashed changes
 }
 
 Write-Host "Ensuring model $env:EVAL_MODEL is available..."

@@ -26,11 +26,8 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from config import (
-<<<<<<< Updated upstream
-=======
     EMAIL_CONFIG_PATH,
     EVALUATE_DIR,
->>>>>>> Stashed changes
     FRONTEND_DIST,
     HOST,
     MAX_DOC_CHARS,
