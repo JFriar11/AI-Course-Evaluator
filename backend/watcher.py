@@ -1463,7 +1463,7 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
         print(f"[AI] {unverified} of {total_criteria} evidence strings could not be "
               "matched to the document text; they are flagged in the scorecard.", flush=True)
 
-    return {
+    result = {
         "status": "success",
         "stem": stem,
         "filename": file_path.name,
@@ -1480,6 +1480,12 @@ def grade_pdf(file_path: Path, progress: Optional[Callable[[str, int, int], None
         "recheck": recheck,
         "files": {key: str(value) for key, value in paths.items()},
     }
+
+    from excel_report import build_excel_report
+    excel_path = OUTPUT_DIR / f"{stem}_evaluation.xlsx"
+    excel_path.write_bytes(build_excel_report(result))
+    result["files"]["excel"] = str(excel_path)
+    return result
 
 
 def grade_document(file_path: Path) -> Optional[Dict[str, object]]:

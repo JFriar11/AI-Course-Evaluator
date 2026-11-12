@@ -617,8 +617,8 @@ class ExtractionTests(unittest.TestCase):
             response = server.email_results(job_id=job_id, recipient='committee@example.edu')
 
         self.assertEqual(response['status'], 'sent')
-        self.assertEqual(list(captured[1].iter_attachments())[0].get_payload(decode=True).decode(), '## Criterion 1.1')
-        self.assertEqual(list(captured[1].iter_attachments())[1].get_filename(), 'assessment_scorecard.json')
+        self.assertEqual(len(list(captured[1].iter_attachments())), 1)
+        self.assertEqual(list(captured[1].iter_attachments())[0].get_filename(), 'assessment_evaluation.xlsx')
         del server.JOBS[job_id]
 
     def test_grading_aborts_when_the_model_runs_past_the_timeout(self):

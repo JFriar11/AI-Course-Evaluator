@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 from email.message import EmailMessage
 
+from excel_report import build_excel_report
 from config import EMAIL_CONFIG_PATH
 from outlook_auth import OutlookSignInRequired, sender_access_token
 
@@ -59,10 +60,9 @@ def send_completion_email(result, filename, recipient):
         message['From'] = config['sender']
         message['To'] = recipient
         message.set_content(body)
-        message.add_attachment(result['feedback'].encode('utf-8'), maintype='text', subtype='markdown',
-                               filename='assessment_feedback.md')
-        message.add_attachment(json.dumps(result['scorecard'], indent=2).encode('utf-8'),
-                               maintype='application', subtype='json', filename='assessment_scorecard.json')
+        message.add_attachment(build_excel_report(result, filename), maintype='application',
+                               subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                               filename='assessment_evaluation.xlsx')
         provider = config.get('provider', 'smtp')
         if provider == 'microsoft_graph':
             token = sender_access_token(config)

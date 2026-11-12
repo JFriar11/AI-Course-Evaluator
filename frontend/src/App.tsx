@@ -345,11 +345,8 @@ export default function App() {
                             <span className="text-xs font-semibold" style={{ color: 'var(--color-success)', fontFamily: 'var(--font-mono)' }}>
                               {Number(job.result.scorecard.total_calculated_score)} / {job.result.max_points}
                             </span>
-                            <a href={downloadUrl(job.id, 'feedback')} className="text-xs underline underline-offset-2" style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-mono)' }}>
-                              feedback →
-                            </a>
-                            <a href={downloadUrl(job.id, 'scorecard')} className="text-xs underline underline-offset-2" style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-mono)' }}>
-                              scorecard →
+                            <a href={downloadUrl(job.id, 'excel')} className="text-xs underline underline-offset-2" style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-mono)' }}>
+                              Excel report →
                             </a>
                           </div>
                         )}

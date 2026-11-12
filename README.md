@@ -16,10 +16,14 @@ The launcher creates `.venv` if it is missing, installs the dependencies in
 checks that Ollama is running, and opens `http://127.0.0.1:8000`. Drop a report
 PDF onto the page: the local model scores all 23 rubric criteria, the page shows
 the evidence and notes behind each score, and the totals are recomputed from the
-criterion scores. Each finished report can be downloaded as
-`<name>_scorecard.json`, `<name>_feedback.md`, `<name>_detail.json`,
-`<name>_audit_trail.txt`, or the extracted text, and can be emailed if SMTP
-details are placed in `backend/email_config.json`.
+criterion scores. Download an Excel workbook (`<name>_evaluation.xlsx`) that
+copies the expanded result panel: section totals, criterion scores, comments,
+evidence quotes, review flags, and summary. Use Excel's outline controls to
+collapse or expand each section. New evaluations also save this workbook in
+`Output/`; saved reports can export it without grading again. Completion emails
+attach the same workbook. JSON and Markdown files remain internal for report
+history and compatibility; audit trail, extracted text, and source PDF downloads
+remain available. Email settings are in `backend/email_config.json`.
 
 ### Automatic completion emails
 

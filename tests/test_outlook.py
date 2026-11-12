@@ -40,8 +40,9 @@ class OutlookTests(unittest.TestCase):
                 self.assertEqual(message['To'], 'recipient@example.org')
                 self.assertIn('Revisions recommended', message.get_body().get_content())
                 attachments = list(message.iter_attachments())
-                self.assertEqual(len(attachments), 2)
-                self.assertEqual(attachments[0].get_payload(decode=True).decode(), result()['feedback'])
+                self.assertEqual(len(attachments), 1)
+                self.assertEqual(attachments[0].get_filename(), 'assessment_evaluation.xlsx')
+                self.assertTrue(attachments[0].get_payload(decode=True).startswith(b'PK'))
                 smtp.assert_not_called()
 
     def test_signin_and_access_failures_do_not_send_via_smtp(self):
