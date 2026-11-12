@@ -8,7 +8,7 @@ Evaluate the report across five distinct sections and rubrics:
 4. Results / results_rubric.txt
 5. Continuous Improvement (CI) Plan / ci_plan_rubric.txt
 
-Each section has a number of criterion that you will use as the basis of your grading. For each criterion, assign only the allowed point values (0.0, 0.5, or 1.0) based strictly on the conditions stated in the section's rubric. Try to refrain from giving a score of 0.5.
+Each section has a number of criterion that you will use as the basis of your grading. For each criterion, assign a point value (any tenth decimal) based strictly on the conditions stated in the section's rubric. Give the score based on how well the report completes the criterion. Be harsh with your scores. Only give the full point if the report truly deserves it. A 1.0 would mean it fully completes the crtierion. A 0.0 means it has no mention of the criterion. Any tenth decimal (such as 0.3 or 0.7) means that it partially completes the criterion. If it is partially commplete the score should reflect how close it is to being complete (with a 0.8 being more complete than a 0.4, and a 0.6 being somewhere in between).
 
 For each section, show the combined score of all criterion within the section. 
 Provide a summarized socre for each section (such as SECTION 1), as well as listing your score for each criterion (such as Criterion 2.2).

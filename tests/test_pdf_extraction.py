@@ -422,9 +422,9 @@ class ExtractionTests(unittest.TestCase):
             "total_calculated_score": 99,
         }
         scorecard = watcher.build_scorecard(sloppy, templates)
-        self.assertEqual(scorecard['administrative']['criteria']['1.1']['score'], 0.5)
+        self.assertEqual(scorecard['administrative']['criteria']['1.1']['score'], 0.4)
         self.assertEqual(scorecard['methodology']['criteria']['3.1']['score'], 1.0)
-        self.assertEqual(scorecard['administrative']['section_score'], 0.5)
+        self.assertEqual(scorecard['administrative']['section_score'], 0.4)
         self.assertEqual(
             scorecard['total_calculated_score'],
             sum(section['section_score'] for section in scorecard.values() if isinstance(section, dict)),
@@ -641,6 +641,8 @@ class ExtractionTests(unittest.TestCase):
         self.assertIn("made up quote", prompt)
         self.assertIn("no names appear here", prompt)
         self.assertIn("do not invent wording", prompt.lower())
+        self.assertIn("increments of 0.1", prompt)
+        self.assertNotIn('"score": 0.5', prompt)
 
     def test_recheck_criteria_replaces_a_fabricated_quote_with_a_real_one(self):
         sections = [{

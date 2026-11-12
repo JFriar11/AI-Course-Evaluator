@@ -271,7 +271,7 @@ def _clamp_score(value: object, criterion_id: str, warnings: List[str]) -> float
     except (TypeError, ValueError):
         warnings.append(f"Criterion {criterion_id} had a non-numeric score ({value!r}); recorded as 0.0.")
         return 0.0
-    clamped = round(number * 2) / 2
+    clamped = round(number, 1)
     if clamped != number:
         warnings.append(f"Criterion {criterion_id} scored {number}; rounded to {clamped}.")
     if clamped < 0 or clamped > 1:
@@ -820,13 +820,13 @@ Rules:
 - A passage being merely related to the topic is not enough: it must show the
   criterion is actually met.
 - Do not invent wording that is not in the passages.
-- "score" must be 0.0, 0.5 or 1.0.
+- "score" must be in increments of 0.1 from 0.0 to 1.0.
 
 RUBRIC (for reference only, never quote it):
 {rubric_text}
 
-Return JSON exactly like:
-{{"criteria": {{"3.3": {{"evidence": "...", "note": "...", "score": 0.5}}}}}}
+Return only JSON with a "criteria" object mapping each criterion ID to an
+object containing "evidence", "note", and a numeric "score".
 
 CRITERIA TO RE-DECIDE:
 {blocks}

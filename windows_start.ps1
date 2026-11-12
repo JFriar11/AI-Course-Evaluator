@@ -1,6 +1,7 @@
 # One-command PowerShell launcher for the Program Assessment Screener (Windows).
 # Installs what is missing, starts the model server, then opens the app.
 #
+#   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 #   .\windows_start.ps1
 #
 $ErrorActionPreference = "Stop"
