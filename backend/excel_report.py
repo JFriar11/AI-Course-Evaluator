@@ -30,7 +30,7 @@ def build_excel_report(result, filename=None):
 
     scorecard = result.get('scorecard', {})
     row(['Report', filename or result.get('filename') or result.get('stem', '')], True)
-    row(['Total score', scorecard.get('total_calculated_score', 0), 'Maximum', result.get('max_points', 23)])
+    row(['Total score', scorecard.get('total_calculated_score', 0), 'Maximum', result.get('max_points', 25)])
     row(['Evidenced score', scorecard.get('verified_score', scorecard.get('total_calculated_score', 0))])
     extraction = result.get('extraction', {})
     row(['Pages', extraction.get('pages', 0), 'OCR pages', extraction.get('ocr_pages', 0),

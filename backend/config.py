@@ -68,10 +68,10 @@ VISION_MIN_IMAGE_BYTES = int(os.environ.get("VISION_MIN_IMAGE_BYTES", "10240"))
 # hallucinated citations without a full re-grade. Set RECHECK_UNVERIFIED=0 to
 # disable it.
 RECHECK_UNVERIFIED = os.environ.get("RECHECK_UNVERIFIED", "1") not in ("0", "false", "no")
-# One pass covers up to this many criteria per error type. A full 23-criterion
+# One pass covers up to this many criteria per error type. A full 25-criterion
 # re-check prompt is only a few thousand tokens, so the whole rubric can be
 # revisited in a single round trip.
-RECHECK_MAX_CRITERIA = int(os.environ.get("RECHECK_MAX_CRITERIA", "23"))
+RECHECK_MAX_CRITERIA = int(os.environ.get("RECHECK_MAX_CRITERIA", "25"))
 RECHECK_TIMEOUT_SECONDS = int(os.environ.get("RECHECK_TIMEOUT_SECONDS", "900"))
 
 # Prefer a model that is actually installed. Set EVAL_MODEL to pin one.
