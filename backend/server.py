@@ -22,7 +22,7 @@ from typing import Dict, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from config import (
@@ -44,6 +44,7 @@ from config import (
     model_is_available,
     ollama_is_running,
 )
+from excel_report import build_excel_report, EXCEL_MEDIA_TYPE
 from console import safe_print as print
 from notifications import send_completion_email, valid_recipient
 from watcher import (EvaluationError, grade_pdf, load_criterion_texts, load_scorecard_templates,
@@ -319,11 +320,20 @@ async def evaluate(file: UploadFile = File(...), model: Optional[str] = Form(Non
            "source_pdf": str(saved_source), "queue": queue_status()}
 
 
+def _excel_response(result: dict, filename: str):
+    name = Path(filename).stem
+    from urllib.parse import quote
+    return Response(build_excel_report(result, filename), media_type=EXCEL_MEDIA_TYPE,
+                    headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(name + '_evaluation.xlsx', safe='')}"})
+
+
 @app.get("/api/jobs/{job_id}/download/{kind}")
 def download(job_id: str, kind: str):
     job = JOBS.get(job_id)
     if not job or not job.get("result"):
         raise HTTPException(status_code=404, detail="No completed result for this job")
+    if kind == "excel":
+        return _excel_response(job["result"], job["filename"])
     files = job["result"]["files"]
     if kind not in files:
         raise HTTPException(status_code=400, detail=f"Unknown download '{kind}'")
@@ -502,6 +512,10 @@ def get_saved_result(stem: str):
 
 @app.get("/api/results/{stem}/{kind}")
 def download_saved(stem: str, kind: str):
+    if Path(stem).name != stem or stem.startswith("."):
+        raise HTTPException(status_code=400, detail="Invalid report name")
+    if kind == "excel":
+        return _excel_response(_saved_result(stem), stem)
     suffix = {
         "scorecard": "_scorecard.json",
         "detail": "_detail.json",

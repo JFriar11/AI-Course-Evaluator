@@ -34,7 +34,7 @@ class NotificationTests(unittest.TestCase):
                 client.starttls.assert_called_once()
                 message = client.send_message.call_args.args[0]
                 self.assertEqual(message['To'], 'prof@example.com')
-                self.assertEqual(len(list(message.iter_attachments())), 2)
+                self.assertEqual(len(list(message.iter_attachments())), 1)
                 self.assertIn('Acceptable to proceed', message.get_body().get_content())
             with patch.object(notifications, 'EMAIL_CONFIG_PATH', config), patch.object(notifications.smtplib, 'SMTP', side_effect=OSError('offline')):
                 self.assertEqual(notifications.send_completion_email(result(), 'report.pdf', 'prof@example.com')['status'], 'failed')

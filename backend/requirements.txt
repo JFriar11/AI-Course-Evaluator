@@ -12,3 +12,5 @@ msal>=1.31,<2
 # Optional: figure alt-text captions. Without this (and without GEMINI_API_KEY)
 # extraction still works, it just records that a figure was not read.
 google-genai>=1.0,<2.0
+
+openpyxl>=3.1,<4

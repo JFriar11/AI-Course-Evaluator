@@ -177,9 +177,7 @@ export default function ResultPanel({ job }: { job: Job }) {
       )}
 
       <div className="px-5 py-4 flex flex-wrap gap-2">
-        <DownloadLink jobId={job.id} kind="scorecard" label="scorecard.json" />
-        <DownloadLink jobId={job.id} kind="feedback" label="feedback.md" />
-        <DownloadLink jobId={job.id} kind="detail" label="full detail" />
+        <DownloadLink jobId={job.id} kind="excel" label="Download Excel report" />
         <DownloadLink jobId={job.id} kind="audit_trail" label="audit trail" />
         <DownloadLink jobId={job.id} kind="extracted_text" label="extracted text" />
         <DownloadLink jobId={job.id} kind="source_pdf" label="source PDF" />
