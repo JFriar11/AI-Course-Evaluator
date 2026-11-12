@@ -56,7 +56,7 @@ def _max_points() -> int:
     try:
         return sum(len(ids) for ids in load_scorecard_templates().sections.values())
     except Exception:
-        return 25
+        return 23
 
 
 app = FastAPI(title="Program Assessment Screener")
